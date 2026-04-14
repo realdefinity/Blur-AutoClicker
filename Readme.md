@@ -62,14 +62,14 @@ The old Config and Stats files will unfortunately not be compatible with the new
 
 ---
 
-## License
-
-GPL v3 https://www.gnu.org/licenses/gpl-3.0.en.html#license-text
-
-## Support the project
+## Support the project!
 [![ko-fi](https://www.ko-fi.com/img/donate_sm.png)]([https://ko-fi.com/blur009)
 
 You can also support the project by starring the repository and sharing it with your friends :). Thank you for your support!
+
+## License
+
+This project is licensed under the [GNU General Public License v3.0](https://www.gnu.org/licenses/gpl-3.0.en.html#license-text).
 
 ## Other Info
 1. Windows has a limit of around 500 CPS for mouse events. This is because Windows timer resolution is limited to about 1ms at minimum (1000cps) but windows also needs to do other things, so the practical limit is around 800cps, but since I can not guarantee that performance on every computer, I set the limit to 500cps.

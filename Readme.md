@@ -45,14 +45,20 @@ Other Features:
 
 ## Installation
 
-1. download from releases  
-2. run the installer
-3. run the program (default location is `%localappdata%/BlurAutoClicker/BlurAutoClicker.exe`)
+ <tr>
+    <td align="center" colspan="2">
+      <a href="https://github.com/Blur009/Blur-AutoClicker/releases/latest">
+        <img src="https://github.com/machiav3lli/oandbackupx/blob/034b226cea5c1b30eb4f6a6f313e4dadcbb0ece4/badge_github.png" alt="Download from GitHub" height="75">
+      </a>
+    </td>
+  </tr>
 
-config and stats are stored in `%appdata%/BlurAutoClicker`
+By default, the program is stored in `%localappdata%/BlurAutoClicker/BlurAutoClicker.exe`. 
 
-Info: If you are on version 2.1.2 or below, delete the old executable (the installer will not delete it for you).
-The old Config and Stats files will unfortunately not be compatible with the new versions (3.0.0 and above), so they will be deleted upon launching the application.
+Config and stats are stored in `%appdata%/BlurAutoClicker`.
+
+*Info: If you are on version 2.1.2 or below, delete the old executable (the installer will not delete it for you).
+The old Config and Stats files will unfortunately not be compatible with the new versions (3.0.0 and above), so they will be deleted upon launching the application.*
 
 ---
 
@@ -61,7 +67,7 @@ The old Config and Stats files will unfortunately not be compatible with the new
 GPL v3 https://www.gnu.org/licenses/gpl-3.0.en.html#license-text
 
 ## Support the project
-Ko-fi: https://ko-fi.com/blur009
+[![ko-fi](https://www.ko-fi.com/img/donate_sm.png)]([https://ko-fi.com/blur009)
 
 You can also support the project by starring the repository and sharing it with your friends :). Thank you for your support!
 

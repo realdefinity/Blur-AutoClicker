@@ -174,3 +174,20 @@ pub fn get_stats() -> Result<CumulativeStats, String> {
 pub fn reset_stats() -> Result<CumulativeStats, String> {
     crate::engine::stats::reset_stats()
 }
+
+#[tauri::command]
+pub fn get_autostart_enabled() -> bool {
+    crate::autostart::get_autostart_enabled()
+}
+
+#[tauri::command]
+pub fn set_autostart_enabled(enabled: bool) -> Result<(), String> {
+    crate::autostart::set_autostart_enabled(enabled).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn quit_app(app: AppHandle) {
+    crate::overlay::OVERLAY_THREAD_RUNNING
+        .store(false, std::sync::atomic::Ordering::SeqCst);
+    app.exit(0);
+}

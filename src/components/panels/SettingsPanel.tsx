@@ -52,6 +52,7 @@ export default function SettingsPanel({
   // const [resettingStats, setResettingStats] = useState(false);
   const [stats, setStats] = useState<CumulativeStats | null>(null);
   const [atBottom, setAtBottom] = useState(false);
+  const [autostartEnabled, setAutostartEnabled] = useState<boolean | null>(null);
 
   const panelRef = useRef<HTMLDivElement>(null);
 
@@ -59,6 +60,9 @@ export default function SettingsPanel({
     invoke<CumulativeStats>("get_stats")
       .then(setStats)
       .catch(() => {});
+    invoke<boolean>("get_autostart_enabled")
+      .then(setAutostartEnabled)
+      .catch(() => setAutostartEnabled(false));
   }, []);
 
   const handleScroll = () => {
@@ -277,6 +281,51 @@ export default function SettingsPanel({
         <div className="settings-divider" />
         <div className="settings-row">
           <div className="settings-label-group">
+            <span className="settings-label">Minimize to Tray</span>
+            <span className="settings-sublabel">
+              When enabled, closing the window hides it to the system tray instead of quitting.
+            </span>
+          </div>
+          <div className="settings-seg-group">
+            {["On", "Off"].map((o) => (
+              <button
+                key={o}
+                className={`settings-seg-btn ${(settings.minimizeToTray ? "On" : "Off") === o ? "active" : ""}`}
+                onClick={() => update({ minimizeToTray: o === "On" })}
+              >
+                {o}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="settings-row">
+          <div className="settings-label-group">
+            <span className="settings-label">Run on Startup</span>
+            <span className="settings-sublabel">
+              Automatically start BlurAutoClicker with Windows, minimized to tray.
+            </span>
+          </div>
+          <div className="settings-seg-group">
+            {["On", "Off"].map((o) => (
+              <button
+                key={o}
+                className={`settings-seg-btn ${autostartEnabled === (o === "On") ? "active" : ""}`}
+                disabled={autostartEnabled === null}
+                onClick={() => {
+                  const next = o === "On";
+                  invoke("set_autostart_enabled", { enabled: next })
+                    .then(() => setAutostartEnabled(next))
+                    .catch(console.error);
+                }}
+              >
+                {o}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="settings-divider" />
+        <div className="settings-row">
+          <div className="settings-label-group">
             <span className="settings-label">Theme</span>
             <span className="settings-sublabel">
               Switch between Dark and light themes.
@@ -308,7 +357,9 @@ export default function SettingsPanel({
             className="settings-btn-danger"
             onClick={() => {
               setResetting(true);
-              onReset().finally(() => setResetting(false));
+              onReset()
+                .then(() => setAutostartEnabled(false))
+                .finally(() => setResetting(false));
             }}
           >
             {resetting ? "Resetting..." : "Reset"}

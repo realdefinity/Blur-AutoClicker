@@ -229,7 +229,11 @@ export default function App() {
   };
 
   const handleWindowClose = async () => {
-    await getCurrentWindow().close();
+    if (uiSettingsRef.current.minimizeToTray) {
+      await getCurrentWindow().hide();
+    } else {
+      await invoke("quit_app");
+    }
   };
 
   useEffect(() => {
@@ -432,6 +436,7 @@ export default function App() {
 
       await invoke("reset_settings");
       await clearSavedSettings();
+      await invoke("set_autostart_enabled", { enabled: false }).catch(() => {});
 
       lastValidHotkeyRef.current = DEFAULT_SETTINGS.hotkey;
       committedSettingsRef.current = DEFAULT_SETTINGS;

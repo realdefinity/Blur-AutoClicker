@@ -48,6 +48,7 @@ export interface Settings {
   showStopOverlay: boolean;
   strictHotkeyModifiers: boolean;
   theme: Theme;
+  minimizeToTray: boolean;
 }
 
 export interface ClickerStatus {
@@ -102,6 +103,7 @@ export const DEFAULT_SETTINGS: Settings = {
   showStopOverlay: true,
   strictHotkeyModifiers: false,
   theme: "dark",
+  minimizeToTray: false,
 };
 
 function sanitizeSavedPanel(value: unknown): SavedPanel {
@@ -235,6 +237,7 @@ function sanitizeSettings(input?: Partial<Settings> | null): Settings {
     explanationMode: sanitizeExplanationMode(saved),
     lastPanel: sanitizeSavedPanel(saved.lastPanel),
     theme: saved.theme === "light" ? "light" : "dark",
+    minimizeToTray: sanitizeBoolean(saved.minimizeToTray, false),
   };
 }
 

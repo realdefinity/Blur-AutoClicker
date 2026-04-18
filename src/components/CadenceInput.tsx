@@ -240,10 +240,10 @@ export default function CadenceInput({ settings, update, variant }: Props) {
         <button
           type="button"
           className="simple-cycle-btn"
-          onClick={() => switchMode(settings.rateInputMode === "rate" ? "delay" : "rate")}
+          onClick={() => switchMode(settings.rateInputMode === "rate" ? "duration" : "rate")}
           onContextMenu={(e) => {
             e.preventDefault();
-            switchMode(settings.rateInputMode === "rate" ? "delay" : "rate");
+            switchMode(settings.rateInputMode === "rate" ? "duration" : "rate");
           }}
         >
           {settings.rateInputMode === "rate" ? "Rate" : "Delay"}

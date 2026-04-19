@@ -7,7 +7,6 @@ import {
   MOUSE_BUTTON_OPTIONS,
   SETTINGS_LIMITS,
 } from "../../settingsSchema";
-import "./Modes.css";
 import "./SimplePanel.css";
 // I HATE MAKING UI, FUCK UI DESIGN IN CODE, WHY CANT I JUST PHOTOSHOP THIS SHIT
 // ahem, made with love :3

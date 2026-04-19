@@ -32,26 +32,22 @@ const SimplePanel = lazy(() => import("./components/panels/SimplePanel"));
 const AdvancedPanel = lazy(() => import("./components/panels/AdvancedPanel"));
 const SettingsPanel = lazy(() => import("./components/panels/SettingsPanel"));
 const TitleBar = lazy(() => import("./components/TitleBar"));
-const AdvancedPanelCompact = lazy(
-  () => import("./components/panels/AdvancedPanelCompact"),
-);
-
 export type Tab = "simple" | "advanced" | "settings";
 
 const BACKEND_SETTINGS_SCHEMA_VERSION = 8;
-const OPERATIONAL_SETTING_KEYS = new Set<string>(Object.keys(buildPresetSnapshot(DEFAULT_SETTINGS)));
+const OPERATIONAL_SETTING_KEYS = new Set<string>(
+  Object.keys(buildPresetSnapshot(DEFAULT_SETTINGS)),
+);
 
 function getPanelSize(tab: Tab, settings: Settings, hasUpdate: boolean) {
   const extra = hasUpdate ? 30 : 0;
-  if (tab === "settings") return { width: 560, height: 720 + extra };
   if (tab === "simple") {
     return settings.rateInputMode === "duration"
       ? { width: 760, height: 175 + extra }
       : { width: 640, height: 175 + extra };
   }
-  return settings.explanationMode === "off"
-    ? { width: 860, height: 760 + extra }
-    : { width: 980, height: 860 + extra };
+  if (tab === "settings") return { width: 560, height: 720 + extra };
+  return { width: 860, height: 760 + extra };
 }
 
 const textScale = await invoke<number>("get_text_scale_factor");
@@ -469,7 +465,9 @@ export default function App() {
 
         let registeredHotkey = loadedSettings.hotkey;
         try {
-          registeredHotkey = await registerHotkeyCandidate(loadedSettings.hotkey);
+          registeredHotkey = await registerHotkeyCandidate(
+            loadedSettings.hotkey,
+          );
         } catch (err) {
           console.error("Failed to register saved hotkey:", err);
           registeredHotkey = lastValidHotkeyRef.current;
@@ -712,60 +710,54 @@ export default function App() {
   return (
     <I18nProvider language={settings.language}>
       <div className="app-root" data-tab={tab}>
-      <TitleBar
-        tab={tab}
-        setTab={handleTabChange}
-        running={status.running}
-        stopReason={
-          settings.showStopReason && tab === "advanced"
-            ? status.stopReason
-            : null
-        }
-        isAlwaysOnTop={settings.alwaysOnTop}
-        onToggleAlwaysOnTop={handleToggleAlwaysOnTop}
-        onRequestClose={handleWindowClose}
-      />
-      {updateInfo && (
-        <UpdateBanner
-          key={`${updateInfo.currentVersion}:${updateInfo.latestVersion}`}
-          currentVersion={updateInfo.currentVersion}
-          latestVersion={updateInfo.latestVersion}
+        <TitleBar
+          tab={tab}
+          setTab={handleTabChange}
+          running={status.running}
+          stopReason={
+            settings.showStopReason && tab === "advanced"
+              ? status.stopReason
+              : null
+          }
+          isAlwaysOnTop={settings.alwaysOnTop}
+          onToggleAlwaysOnTop={handleToggleAlwaysOnTop}
+          onRequestClose={handleWindowClose}
         />
-      )}
-      <main className="panel-area">
-        {tab === "simple" && (
-          <SimplePanel settings={settings} update={updateSettings} />
+        {updateInfo && (
+          <UpdateBanner
+            key={`${updateInfo.currentVersion}:${updateInfo.latestVersion}`}
+            currentVersion={updateInfo.currentVersion}
+            latestVersion={updateInfo.latestVersion}
+          />
         )}
-        {tab === "advanced" &&
-          (settings.explanationMode === "off" ? (
-            <AdvancedPanelCompact
-              settings={settings}
-              update={updateSettings}
-              onPickPosition={handlePickPosition}
-            />
-          ) : (
+        <main className="panel-area">
+          {tab === "simple" && (
+            <SimplePanel settings={settings} update={updateSettings} />
+          )}
+          {tab === "advanced" && (
             <AdvancedPanel
               settings={settings}
               update={updateSettings}
               onPickPosition={handlePickPosition}
+              showInfo={true}
             />
-          ))}
-        {tab === "settings" && (
-          <SettingsPanel
-            settings={settings}
-            update={updateSettings}
-            running={status.running}
-            appInfo={appInfo}
-            onSavePreset={handleSavePreset}
-            onApplyPreset={handleApplyPreset}
-            onUpdatePreset={handleUpdatePreset}
-            onRenamePreset={handleRenamePreset}
-            onDeletePreset={handleDeletePreset}
-            onToggleAlwaysOnTop={handleToggleAlwaysOnTop}
-            onReset={handleResetSettings}
-          />
-        )}
-      </main>
+          )}
+          {tab === "settings" && (
+            <SettingsPanel
+              settings={settings}
+              update={updateSettings}
+              running={status.running}
+              appInfo={appInfo}
+              onSavePreset={handleSavePreset}
+              onApplyPreset={handleApplyPreset}
+              onUpdatePreset={handleUpdatePreset}
+              onRenamePreset={handleRenamePreset}
+              onDeletePreset={handleDeletePreset}
+              onToggleAlwaysOnTop={handleToggleAlwaysOnTop}
+              onReset={handleResetSettings}
+            />
+          )}
+        </main>
       </div>
     </I18nProvider>
   );

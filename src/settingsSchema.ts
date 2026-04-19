@@ -5,7 +5,6 @@ export type MouseButton = "Left" | "Middle" | "Right";
 export type ClickMode = "Toggle" | "Hold";
 export type TimeLimitUnit = "s" | "m" | "h";
 export type SavedPanel = "simple" | "advanced";
-export type ExplanationMode = "off" | "text";
 export type Theme = "dark" | "light";
 export type PresetId = string;
 export type RateInputMode = "rate" | "duration";
@@ -71,7 +70,6 @@ export interface Settings extends PresetSnapshot {
   customStopZoneHeight: number;
   disableScreenshots: boolean;
   advancedSettingsEnabled: boolean;
-  explanationMode: ExplanationMode;
   lastPanel: SavedPanel;
   showStopReason: boolean;
   showStopOverlay: boolean;
@@ -166,24 +164,6 @@ function sanitizeSavedPanel(value: unknown): SavedPanel {
   return value === "advanced" ? value : "simple";
 }
 
-function sanitizeExplanationMode(
-  input: Partial<Settings> | null | undefined,
-): ExplanationMode {
-  const saved = (input ?? {}) as Partial<Settings> & {
-    functionExplanationsEnabled?: boolean;
-    toolTipsEnabled?: boolean;
-    explanationMode?: unknown;
-  };
-
-  if (saved.explanationMode === "off" || saved.explanationMode === "text") {
-    return saved.explanationMode;
-  }
-
-  if (saved.toolTipsEnabled) return "text";
-  if (saved.functionExplanationsEnabled === false) return "off";
-  return "text";
-}
-
 function sanitizeTheme(value: unknown): Theme {
   return value === "light" ? "light" : "dark";
 }
@@ -255,7 +235,6 @@ export function createDefaultSettings(version: string): Settings {
     customStopZoneHeight: 100,
     disableScreenshots: false,
     advancedSettingsEnabled: true,
-    explanationMode: "text",
     lastPanel: "simple",
     showStopReason: true,
     showStopOverlay: true,
@@ -699,7 +678,6 @@ export function sanitizeSettings(
     customStopZoneWidth: clampNumber(saved.customStopZoneWidth, defaults.customStopZoneWidth, SETTINGS_LIMITS.stopZoneDimension.min),
     customStopZoneHeight: clampNumber(saved.customStopZoneHeight, defaults.customStopZoneHeight, SETTINGS_LIMITS.stopZoneDimension.min),
     disableScreenshots: false,
-    explanationMode: sanitizeExplanationMode(saved),
     lastPanel: sanitizeSavedPanel(saved.lastPanel),
     theme: sanitizeTheme(saved.theme),
     strictHotkeyModifiers: sanitizeBoolean(saved.strictHotkeyModifiers, defaults.strictHotkeyModifiers),

@@ -5,7 +5,12 @@ import type {
   PresetId,
   Settings,
 } from "../../store";
-import { LANGUAGE_OPTIONS, useTranslation, type Language } from "../../i18n";
+import {
+  isLanguage,
+  LANGUAGE_OPTIONS,
+  useTranslation,
+  type Language,
+} from "../../i18n";
 import { invoke } from "@tauri-apps/api/core";
 import { useEffect, useRef, useState } from "react";
 import { openUrl } from "@tauri-apps/plugin-opener";
@@ -15,7 +20,6 @@ import ConfirmDialog from "../ConfirmDialog";
 // TODO: Move presets under stats
 // TODO: Make presets only display 3 profiles at a time before turning into a scrollable area. Otherwise the settings window would infinitly expand downwards.
 // TODO: Change On/Off toggle to be the same as in advanced mode. Preferably we think about some kind of shared assets css instead of re-defining it every time.
-// TODO: Make language selector a drop down instead of section button.
 // TODO: Make Accent color actually be only accents say on hover and such.. "save new" should not be an accent.
 // Preferably all before 3.5 comes out.
 
@@ -664,21 +668,38 @@ export default function SettingsPanel({
 
         <div className="settings-row">
           <div className="settings-label-group">
-            <span className="settings-label">{t("settings.language")}</span>
+            <label
+              className="settings-label"
+              htmlFor="settings-language-select"
+            >
+              {t("settings.language")}
+            </label>
             <span className="settings-sublabel">
               {t("settings.languageDescription")}
             </span>
           </div>
-          <div className="settings-seg-group">
-            {LANGUAGE_OPTIONS.map((option) => (
-              <button
-                key={option.code}
-                className={`settings-seg-btn ${settings.language === option.code ? "active" : ""}`}
-                onClick={() => update({ language: option.code })}
-              >
-                {option.label}
-              </button>
-            ))}
+          <div className="settings-select-wrap">
+            <select
+              id="settings-language-select"
+              className="settings-select"
+              value={settings.language}
+              onChange={(event) => {
+                const nextLanguage = event.currentTarget.value;
+                if (isLanguage(nextLanguage)) {
+                  update({ language: nextLanguage });
+                }
+              }}
+            >
+              {LANGUAGE_OPTIONS.map((option) => (
+                <option
+                  key={option.code}
+                  value={option.code}
+                  dir={option.code === "ar" ? "rtl" : "ltr"}
+                >
+                  {option.label}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
 

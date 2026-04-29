@@ -9,14 +9,19 @@
 - Delay / Rate toggle for clicks per time and time per click.
 - Added a new tab for Safety settings (Edge / Corner Stop, Stop Zones, etc.)
 ## Changed
+- Colors slightly adjusted for better visibility and consistency.
+- Simple panel look to be consistent with the rest of the UI and added drop-downs instead of buttons.
 - Layout of the UI has been made smaller
 - Changed the look of On/Off buttons to be more visible at a glance.
-- 
+- Settings Panel layout has been changed and made into sections.
 - Centralized frontend settings bounds, options, and preset helpers.
 - Cleaned up runtime stats logging output and changelog encoding issues.
 - Split up Advanced page file for better organization.
 ## Removed
 - Position picking as you can just set the position in Sequence clicking.
+## Fix
+- Fixed mouse down after stopping the clicker.
+- incorrect safe zone scaling with windows display scaling
 
 
 # v3.4.1 - 16.04.2026 (d.m.y)

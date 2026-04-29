@@ -139,7 +139,7 @@ export default function SequenceSection({
   }, [countdown, requestCursorPosition, settings.sequencePoints, update]);
 
   const addCurrentCursorToSequence = async () => {
-    setCountdown(4);
+    setCountdown(3);
   };
 
   const updateSequencePoint = (

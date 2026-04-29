@@ -62,7 +62,10 @@ export default function FailsafeSection({ settings, update, showInfo }: Props) {
           <div className="adv-row" style={{ gap: 8 }}>
             <div className="adv-corner-grid">
               {(["tl", "tr", "bl", "br"] as const).map((cornerKey) => (
-                <div key={cornerKey} className="adv-corner-box">
+                <div
+                  key={cornerKey}
+                  className="adv-corner-box adv-stop-boundary-box"
+                >
                   <div className={`adv-arc adv-arc-${cornerKey}`} />
                   <NumInput
                     value={settings[CORNER_KEYS[cornerKey]]}
@@ -107,7 +110,10 @@ export default function FailsafeSection({ settings, update, showInfo }: Props) {
           <div className="adv-row" style={{ gap: 8 }}>
             <div className="adv-corner-grid">
               {(["top", "right", "left", "bottom"] as const).map((edgeSide) => (
-                <div key={edgeSide} className="adv-corner-box">
+                <div
+                  key={edgeSide}
+                  className="adv-corner-box adv-stop-boundary-box"
+                >
                   <div className={`adv-edge-bar adv-edge-bar-${edgeSide}`} />
                   <NumInput
                     value={settings[EDGE_KEYS[edgeSide]]}

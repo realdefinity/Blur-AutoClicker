@@ -151,7 +151,7 @@ export default function CustomStopZoneSection({
         <div className="adv-stop-zone-body">
           <div className="adv-stop-zone-controls">
             <div className="adv-stop-zone-grid">
-              <div className="adv-numbox-sm adv-sequence-coord">
+              <div className="adv-numbox-sm adv-sequence-coord adv-stop-zone-input">
                 <span className="adv-unit adv-axis-label">X</span>
                 <NumInput
                   value={settings.customStopZoneX}
@@ -159,7 +159,7 @@ export default function CustomStopZoneSection({
                   style={{ width: "54px", textAlign: "right" }}
                 />
               </div>
-              <div className="adv-numbox-sm adv-sequence-coord">
+              <div className="adv-numbox-sm adv-sequence-coord adv-stop-zone-input">
                 <span className="adv-unit adv-axis-label">Y</span>
                 <NumInput
                   value={settings.customStopZoneY}
@@ -167,7 +167,7 @@ export default function CustomStopZoneSection({
                   style={{ width: "54px", textAlign: "right" }}
                 />
               </div>
-              <div className="adv-numbox-sm adv-sequence-coord">
+              <div className="adv-numbox-sm adv-sequence-coord adv-stop-zone-input">
                 <span className="adv-unit">W</span>
                 <NumInput
                   value={settings.customStopZoneWidth}
@@ -176,7 +176,7 @@ export default function CustomStopZoneSection({
                   style={{ width: "54px", textAlign: "right" }}
                 />
               </div>
-              <div className="adv-numbox-sm adv-sequence-coord">
+              <div className="adv-numbox-sm adv-sequence-coord adv-stop-zone-input">
                 <span className="adv-unit">H</span>
                 <NumInput
                   value={settings.customStopZoneHeight}

@@ -1,4 +1,4 @@
-# v3.5.0 - 19.04.2026 (d.m.y)
+# v3.5.0 - 29.04.2026 (d.m.y)
 ## New
 - Added named presets for saving and reusing clicker configurations.
 - Added persistent Always on Top preference.

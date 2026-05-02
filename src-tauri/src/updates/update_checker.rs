@@ -19,7 +19,7 @@ pub async fn check_for_updates(app: AppHandle) -> Result<Option<CheckUpdateResul
 
     let response = client
         .get(url)
-        .header(USER_AGENT, "BlurAutoClicker")
+        .header(USER_AGENT, "CometClicker")
         .send()
         .await
         .map_err(|e| format!("Network error: {}", e))?;

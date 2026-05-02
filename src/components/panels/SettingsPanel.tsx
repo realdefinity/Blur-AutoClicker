@@ -789,6 +789,30 @@ export default function SettingsPanel({
           <div className="settings-row">
             <div className="settings-label-group">
               <span className="settings-label">
+                {t("settings.sessionElapsedInTitle")}
+              </span>
+              <span className="settings-sublabel">
+                {t("settings.sessionElapsedInTitleDescription")}
+              </span>
+            </div>
+            <div className="settings-seg-group">
+              {onOffOptions.map((option) => (
+                <button
+                  key={String(option.value)}
+                  className={`settings-seg-btn ${settings.showSessionElapsedInTitle === option.value ? "active" : ""}`}
+                  onClick={() =>
+                    update({ showSessionElapsedInTitle: option.value })
+                  }
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="settings-row">
+            <div className="settings-label-group">
+              <span className="settings-label">
                 {t("settings.strictHotkeyModifiers")}
               </span>
               <span className="settings-sublabel">

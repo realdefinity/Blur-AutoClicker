@@ -43,7 +43,7 @@ if ($missingEnvVars.Count -gt 0) {
 }
 
 $description = if ([string]::IsNullOrWhiteSpace($env:BLUR_TRUSTED_SIGNING_DESCRIPTION)) {
-    "BlurAutoClicker"
+    "CometClicker"
 } else {
     $env:BLUR_TRUSTED_SIGNING_DESCRIPTION
 }

@@ -133,6 +133,8 @@ export default function App() {
     latestVersion: string;
   } | null>(null);
   const [dropdownOverflowBottom, setDropdownOverflowBottom] = useState(0);
+  const [sessionStartedAt, setSessionStartedAt] = useState<number | null>(null);
+  const [, setSessionClockTick] = useState(0);
 
   const hotkeyTimer = useRef<number | null>(null);
   const hotkeyRequestIdRef = useRef(0);
@@ -540,6 +542,29 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    setSessionStartedAt((prev) => {
+      if (!status.running) {
+        return null;
+      }
+      if (prev !== null) {
+        return prev;
+      }
+      return Date.now();
+    });
+  }, [status.running]);
+
+  useEffect(() => {
+    if (!status.running || sessionStartedAt === null) {
+      return;
+    }
+    const id = window.setInterval(
+      () => setSessionClockTick((n) => n + 1),
+      200,
+    );
+    return () => clearInterval(id);
+  }, [status.running, sessionStartedAt]);
+
+  useEffect(() => {
     let cleanup: (() => void) | undefined;
 
     listen<ClickerStatus>("clicker-status", (event) => {
@@ -720,6 +745,11 @@ export default function App() {
     }
   };
 
+  const sessionElapsedSecs =
+    status.running && sessionStartedAt !== null
+      ? (Date.now() - sessionStartedAt) / 1000
+      : 0;
+
   return (
     <I18nProvider language={settings.language}>
       <div className="app-root" data-tab={tab}>
@@ -729,6 +759,8 @@ export default function App() {
           running={status.running}
           sessionClickCount={status.clickCount}
           showSessionClickCountInTitle={settings.showSessionClickCountInTitle}
+          sessionElapsedSecs={sessionElapsedSecs}
+          showSessionElapsedInTitle={settings.showSessionElapsedInTitle}
           stopReason={
             settings.showStopReason && (tab === "advanced" || tab === "zones")
               ? status.stopReason

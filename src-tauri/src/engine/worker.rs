@@ -346,6 +346,8 @@ pub fn start_clicker(config: ClickerConfig, control: RunControl) -> RunOutcome {
     };
     let mut next_batch_time = Instant::now();
     let mut stop_reason = String::from("Stopped");
+    let mut last_status_emit = Instant::now();
+    let status_emit_interval = Duration::from_millis(100);
 
     println!("Clicking at: {}, {}", target_x, target_y);
 
@@ -458,6 +460,11 @@ pub fn start_clicker(config: ClickerConfig, control: RunControl) -> RunOutcome {
 
         click_count += clicks_this_cycle as i64;
         CLICK_COUNT.store(click_count, Ordering::Relaxed);
+
+        if last_status_emit.elapsed() >= status_emit_interval {
+            emit_status(&control.app);
+            last_status_emit = Instant::now();
+        }
 
         let remaining = next_batch_time.saturating_duration_since(Instant::now());
         if remaining > Duration::ZERO {

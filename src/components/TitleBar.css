@@ -51,6 +51,19 @@
     0 0 14px var(--accent-green-glow-2);
 }
 
+.window-title__session-elapsed {
+  font-weight: var(--font-weight-md);
+  font-variant-numeric: tabular-nums;
+  color: color-mix(in srgb, var(--accent-green-strong) 62%, var(--text-muted));
+  text-shadow: none;
+}
+
+.window-title-background[data-running="true"] .window-title__session-elapsed {
+  text-shadow:
+    0 0 8px var(--accent-green-glow-1),
+    0 0 14px var(--accent-green-glow-2);
+}
+
 .settings-button {
   background: transparent;
   border: none;

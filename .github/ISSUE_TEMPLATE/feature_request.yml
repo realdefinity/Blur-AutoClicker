@@ -1,5 +1,5 @@
 name: Feature request
-description: Suggest a new feature or improvement for Blur Auto Clicker
+description: Suggest a new feature or improvement for CometClicker
 title: "[Feature]: "
 labels:
   - enhancement
@@ -32,7 +32,7 @@ body:
     attributes:
       label: Proposed solution
       description: Describe the feature or behavior you would like to see.
-      placeholder: It would help if Blur Auto Clicker could ...
+      placeholder: It would help if CometClicker could ...
     validations:
       required: true
 

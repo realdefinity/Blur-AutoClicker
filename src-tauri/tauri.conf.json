@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "BlurAutoClicker",
+  "productName": "CometClicker",
   "version": "3.5.0",
-  "identifier": "BlurAutoClicker",
+  "identifier": "com.cometclicker.app",
   "build": {
     "frontendDist": "../dist",
     "devUrl": "http://localhost:5173",
@@ -15,7 +15,7 @@
     "windows": [
       {
         "label": "main",
-        "title": "BlurAutoClicker",
+        "title": "CometClicker",
         "width": 500,
         "height": 150,
         "resizable": false,
@@ -54,11 +54,11 @@
       "active": true,
       "targets": "nsis",
       "createUpdaterArtifacts": true,
-      "publisher": "Blur009",
-      "copyright": "Copyright (c) Blur009",
+      "publisher": "CometClicker",
+      "copyright": "Copyright (c) CometClicker contributors",
       "category": "Utility",
-      "shortDescription": "Configurable auto clicker with accurate CPS timing.",
-      "longDescription": "Performance-focused auto clicker with global hotkeys, optional overlay, and advanced timing. Licensed under GPLv3.",
+      "shortDescription": "CometClicker — accurate, configurable auto clicker with a modern purple-blue UI.",
+      "longDescription": "Performance-focused auto clicker with global hotkeys, optional overlay, and advanced timing. Fork branding of the Blur project. Licensed under GPLv3.",
       "homepage": "https://github.com/Blur009/Blur-AutoClicker",
       "icon": ["icons/icon.ico"],
       "windows": {

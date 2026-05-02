@@ -1,6 +1,6 @@
 use std::io;
 
-const APP_NAME: &str = "BlurAutoClicker";
+const APP_NAME: &str = "CometClicker";
 const RUN_KEY: &str = "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run";
 
 pub fn get_autostart_enabled() -> bool {

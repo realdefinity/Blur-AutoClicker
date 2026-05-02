@@ -1,10 +1,10 @@
-# Contributing to Blur Auto Clicker
+# Contributing to CometClicker
 
-Thanks for helping improve Blur Auto Clicker.
+Thanks for helping improve CometClicker.
 
 ## Project scope
 
-- Blur Auto Clicker is a Windows-first desktop app built with Tauri 2, Rust, React, and TypeScript.
+- CometClicker is a Windows-first desktop app built with Tauri 2, Rust, React, and TypeScript (fork branding of [Blur Auto Clicker](https://github.com/Blur009/Blur-AutoClicker)).
 - Keep changes focused. Avoid unrelated refactors in the same pull request.
 - If your change affects the UI, include screenshots or a short recording in the pull request.
 

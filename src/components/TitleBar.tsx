@@ -11,7 +11,7 @@ import { translateStopReason, useTranslation, type TranslationKey } from "../i18
 import "./TitleBar.css";
 
 const appWindow = getCurrentWindow();
-const DEFAULT_TITLE = "BlurAutoClicker";
+const DEFAULT_TITLE = "CometClicker";
 
 async function handleMinimize() {
   await appWindow.minimize();
@@ -23,6 +23,8 @@ interface Props {
   running: boolean;
   sessionClickCount: number;
   showSessionClickCountInTitle: boolean;
+  sessionElapsedSecs: number;
+  showSessionElapsedInTitle: boolean;
   stopReason?: string | null;
   isAlwaysOnTop: boolean;
   onToggleAlwaysOnTop: () => Promise<void>;
@@ -54,6 +56,18 @@ const DEFAULT_TITLE_STATE: TitleViewState = {
   isReason: false,
 };
 
+function formatSessionElapsed(secs: number): string {
+  const total = Math.floor(Math.max(0, secs));
+  const s = total % 60;
+  const m = Math.floor(total / 60) % 60;
+  const h = Math.floor(total / 3600);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  if (h > 0) {
+    return `${h}:${pad(m)}:${pad(s)}`;
+  }
+  return `${Math.floor(total / 60)}:${pad(s)}`;
+}
+
 const TAB_ITEMS: readonly TabItem[] = [
   {
     value: "simple",
@@ -79,7 +93,7 @@ const TAB_ITEMS: readonly TabItem[] = [
   {
     value: "advanced",
     labelKey: "titleBar.advanced",
-    color: "var(--accent-yellow)",
+    color: "hsl(190 78% 52%)",
     icon: ({ active }) => (
       <svg
         width="18"
@@ -101,7 +115,7 @@ const TAB_ITEMS: readonly TabItem[] = [
   {
     value: "zones",
     labelKey: "titleBar.zones",
-    color: "hsl(208 85% 58%)",
+    color: "hsl(265 72% 62%)",
     icon: ({ active }) => (
       <svg
         width="18"
@@ -126,6 +140,8 @@ export default function TitleBar({
   running,
   sessionClickCount,
   showSessionClickCountInTitle,
+  sessionElapsedSecs,
+  showSessionElapsedInTitle,
   stopReason,
   isAlwaysOnTop,
   onToggleAlwaysOnTop,
@@ -192,6 +208,8 @@ export default function TitleBar({
           stopReason={stopReason}
           sessionClickCount={sessionClickCount}
           showSessionClickCountInTitle={showSessionClickCountInTitle}
+          sessionElapsedSecs={sessionElapsedSecs}
+          showSessionElapsedInTitle={showSessionElapsedInTitle}
         />
       </div>
 
@@ -269,7 +287,17 @@ function AnimatedTitle({
   stopReason,
   sessionClickCount,
   showSessionClickCountInTitle,
-}: Pick<Props, "running" | "stopReason" | "sessionClickCount" | "showSessionClickCountInTitle">) {
+  sessionElapsedSecs,
+  showSessionElapsedInTitle,
+}: Pick<
+  Props,
+  | "running"
+  | "stopReason"
+  | "sessionClickCount"
+  | "showSessionClickCountInTitle"
+  | "sessionElapsedSecs"
+  | "showSessionElapsedInTitle"
+>) {
   const [titleState, setTitleState] = useState(DEFAULT_TITLE_STATE);
   const frameIdsRef = useRef<number[]>([]);
   const timeoutIdsRef = useRef<number[]>([]);
@@ -340,6 +368,8 @@ function AnimatedTitle({
 
   const showLiveCount =
     running && showSessionClickCountInTitle && !titleState.isReason;
+  const showLiveElapsed =
+    running && showSessionElapsedInTitle && !titleState.isReason;
 
   return (
     <span
@@ -350,6 +380,12 @@ function AnimatedTitle({
         <span className="window-title__session-count" aria-live="polite">
           {" · "}
           {sessionClickCount.toLocaleString(language)}
+        </span>
+      ) : null}
+      {showLiveElapsed ? (
+        <span className="window-title__session-elapsed" aria-live="polite">
+          {" · "}
+          {formatSessionElapsed(sessionElapsedSecs)}
         </span>
       ) : null}
     </span>

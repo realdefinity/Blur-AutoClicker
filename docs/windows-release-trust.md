@@ -38,7 +38,7 @@ Required environment variables for `trusted-signing-cli` mode:
 - `BLUR_TRUSTED_SIGNING_ENDPOINT`
 - `BLUR_TRUSTED_SIGNING_ACCOUNT`
 - `BLUR_TRUSTED_SIGNING_PROFILE`
-- `BLUR_TRUSTED_SIGNING_DESCRIPTION` optional, defaults to `BlurAutoClicker`
+- `BLUR_TRUSTED_SIGNING_DESCRIPTION` optional, defaults to `CometClicker`
 - `AZURE_CLIENT_ID`
 - `AZURE_CLIENT_SECRET`
 - `AZURE_TENANT_ID`
@@ -56,13 +56,13 @@ If `BLUR_WINDOWS_SIGNING_MODE` is unset or set to `none`, the wrapper exits succ
 Check the built installer:
 
 ```powershell
-Get-AuthenticodeSignature src-tauri\target\release\bundle\nsis\BlurAutoClicker_3.4.0_x64-setup.exe
+Get-AuthenticodeSignature src-tauri\target\release\bundle\nsis\CometClicker_3.4.0_x64-setup.exe
 ```
 
 Check the built executable:
 
 ```powershell
-Get-AuthenticodeSignature src-tauri\target\release\BlurAutoClicker.exe
+Get-AuthenticodeSignature src-tauri\target\release\CometClicker.exe
 ```
 
 `NotSigned` is expected for unsigned builds. `Valid` is the expected status after successful Authenticode signing.

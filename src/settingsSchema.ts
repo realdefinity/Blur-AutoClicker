@@ -82,6 +82,8 @@ export interface Settings extends PresetSnapshot {
   showStopOverlay: boolean;
   /** While running, append session click count to the centered title text. */
   showSessionClickCountInTitle: boolean;
+  /** While running, append session elapsed time (mm:ss or h:mm:ss) to the title bar. */
+  showSessionElapsedInTitle: boolean;
   strictHotkeyModifiers: boolean;
   minimizeToTray: boolean;
   theme: Theme;
@@ -91,7 +93,7 @@ export interface Settings extends PresetSnapshot {
   activePresetId: PresetId | null;
 }
 
-export const DEFAULT_ACCENT_COLOR = "#22c55e";
+export const DEFAULT_ACCENT_COLOR = "#8b5cf6";
 export const MAX_PRESETS = 20;
 export const PRESET_NAME_MAX_LENGTH = 40;
 
@@ -245,6 +247,7 @@ export function createDefaultSettings(version: string): Settings {
     showStopReason: true,
     showStopOverlay: true,
     showSessionClickCountInTitle: true,
+    showSessionElapsedInTitle: true,
     strictHotkeyModifiers: false,
     minimizeToTray: false,
     theme: "dark",
@@ -684,6 +687,10 @@ export function sanitizeSettings(
     showSessionClickCountInTitle: sanitizeBoolean(
       saved.showSessionClickCountInTitle,
       defaults.showSessionClickCountInTitle,
+    ),
+    showSessionElapsedInTitle: sanitizeBoolean(
+      saved.showSessionElapsedInTitle,
+      defaults.showSessionElapsedInTitle,
     ),
     alwaysOnTop: sanitizeBoolean(saved.alwaysOnTop, defaults.alwaysOnTop),
     accentColor: sanitizeHexColor(saved.accentColor, defaults.accentColor),

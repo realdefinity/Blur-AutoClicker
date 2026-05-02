@@ -1,5 +1,5 @@
 name: Bug report
-description: Report a reproducible problem in Blur Auto Clicker
+description: Report a reproducible problem in CometClicker
 title: "[Bug]: "
 labels:
   - bug
@@ -23,7 +23,7 @@ body:
   - type: input
     id: version
     attributes:
-      label: Blur Auto Clicker version
+      label: CometClicker version
       description: "Example: 3.5.0"
       placeholder: 3.5.0
     validations:

@@ -35,7 +35,7 @@
   font-weight: 600;
   color: var(--update-banner-text-bg);
   background: transparent;
-  border: 1px solid rgba(254, 188, 46, 0.4);
+  border: 1px solid hsla(258, 55%, 58%, 0.45);
   border-radius: var(--radius-sm);
   padding: 2px 0.625rem;
   cursor: pointer;
@@ -43,7 +43,7 @@
 }
 
 .update-banner-btn:hover {
-  background: rgba(156, 121, 45, 0.15);
+  background: hsla(258, 45%, 48%, 0.18);
   border-color: var(--accent-yellow);
 }
 

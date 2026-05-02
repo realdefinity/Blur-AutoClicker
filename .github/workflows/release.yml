@@ -41,17 +41,17 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           tagName: ${{ github.ref_name }}
-          releaseName: BlurAutoClicker ${{ github.ref_name }}
+          releaseName: CometClicker ${{ github.ref_name }}
           releaseBody: See CHANGELOG for details.
           releaseDraft: true
 
       - name: Create portable zip
         shell: pwsh
         run: |
-          $exe = Get-ChildItem -Path "src-tauri/target/release" -Filter "BlurAutoClicker.exe" | Select-Object -First 1
-          if (-not $exe) { Write-Error "BlurAutoClicker.exe not found"; exit 1 }
+          $exe = Get-ChildItem -Path "src-tauri/target/release" -Filter "CometClicker.exe" | Select-Object -First 1
+          if (-not $exe) { Write-Error "CometClicker.exe not found"; exit 1 }
           $tag = "${{ github.ref_name }}"
-          $zipName = "BlurAutoClicker-${tag}-portable.zip"
+          $zipName = "CometClicker-${tag}-portable.zip"
           Compress-Archive -Path $exe.FullName -DestinationPath $zipName
           echo "ZIP_PATH=$zipName" >> $env:GITHUB_ENV
 

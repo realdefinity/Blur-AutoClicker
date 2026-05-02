@@ -51,15 +51,18 @@ function ControlBox({
   className,
   children,
   style,
+  title,
 }: {
   className?: string;
   children: ReactNode;
   style?: CSSProperties;
+  title?: string;
 }) {
   return (
     <div
       className={`InputBox simple-control-box ${className ?? ""}`.trim()}
       style={style}
+      title={title}
     >
       {children}
     </div>
@@ -147,7 +150,10 @@ export default function SimplePanel({ settings, update }: SimplePanelProps) {
           <CadenceInput settings={settings} update={update} variant="simple" />
         </div>
 
-        <ControlBox className="simple-hotkey-box simple-row-item">
+        <ControlBox
+          className="simple-hotkey-box simple-row-item"
+          title={t("advanced.hotkeyDescription")}
+        >
           <div className="faderbox simple-hotkey-field">
             <HotkeyCaptureInput
               className="simple-hotkey-input"
@@ -166,6 +172,7 @@ export default function SimplePanel({ settings, update }: SimplePanelProps) {
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
+            aria-hidden="true"
           >
             <rect x="2" y="4" width="20" height="14" rx="2" />
             <line x1="6" y1="8" x2="6" y2="8" />
@@ -188,7 +195,10 @@ export default function SimplePanel({ settings, update }: SimplePanelProps) {
       </div>
 
       <div className="hcontainer simple-row simple-row--bottom">
-        <ControlBox className="simple-row-item">
+        <ControlBox
+          className="simple-row-item"
+          title={t("advanced.mouseButtonDescription")}
+        >
           <span className="simple-control-label">
             {t("advanced.mouseButton")}
           </span>
@@ -201,7 +211,10 @@ export default function SimplePanel({ settings, update }: SimplePanelProps) {
           />
         </ControlBox>
 
-        <ControlBox className="simple-row-item">
+        <ControlBox
+          className="simple-row-item"
+          title={t("simple.holdDescription")}
+        >
           <NumberField
             label={t("simple.hold")}
             value={settings.dutyCycle}
@@ -212,7 +225,10 @@ export default function SimplePanel({ settings, update }: SimplePanelProps) {
           />
         </ControlBox>
 
-        <ControlBox className="simple-row-item">
+        <ControlBox
+          className="simple-row-item"
+          title={t("simple.randomizationDescription")}
+        >
           <NumberField
             label={t("simple.randomization")}
             value={settings.speedVariation}

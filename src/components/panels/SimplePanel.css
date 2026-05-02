@@ -3,6 +3,34 @@
   padding-block: 0.125rem;
 }
 
+.simple-panel .InputBox {
+  box-shadow:
+    0 1px 0 color-mix(in srgb, var(--text-primary) 5%, transparent),
+    0 0.35rem 0.85rem color-mix(in srgb, var(--bg-base) 88%, black);
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.simple-panel .InputBox:focus-within {
+  border-color: color-mix(in srgb, var(--accent-green-strong) 45%, var(--border-subtle));
+  box-shadow:
+    0 0 0 1px var(--accent-green-ring),
+    0 0.4rem 1rem color-mix(in srgb, var(--accent-green-glow-2) 35%, transparent);
+}
+
+[data-theme="light"] .simple-panel .InputBox {
+  box-shadow:
+    0 1px 0 color-mix(in srgb, var(--text-primary) 6%, transparent),
+    0 0.2rem 0.5rem rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .simple-panel .InputBox:focus-within {
+  box-shadow:
+    0 0 0 1px var(--accent-green-ring),
+    0 0.25rem 0.6rem color-mix(in srgb, var(--accent-green-glow-2) 50%, transparent);
+}
+
 .vcontainer {
   display: flex;
   flex-direction: column;

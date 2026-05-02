@@ -50,6 +50,8 @@
     "stopHitboxOverlayDescription": "Toggles whether the stop hitbox overlay is shown.",
     "stopReasonAlert": "Stop Reason Alert",
     "stopReasonAlertDescription": "Shows why the clicker stopped in the title bar.",
+    "sessionClickCountInTitle": "Live click count in title",
+    "sessionClickCountInTitleDescription": "While the clicker is running, show how many clicks this session has sent next to the app name.",
     "strictHotkeyModifiers": "Strict Hotkey Modifiers",
     "strictHotkeyModifiersDescription": "On: hotkey only fires when modifier keys match exactly. Off: extra held modifiers are ignored.",
     "sectionStartup": "Startup",
@@ -102,7 +104,8 @@
     "hold": "Click Duration",
     "holdDescription": "How long the mouse button gets held down during each click",
     "randomization": "Speed Variation",
-    "randomizationDescription": "Randomly changes click speed in % range of set CPS"
+    "randomizationDescription": "Randomly changes click speed in % range of set CPS",
+    "perClick": "Per click"
   },
   "advanced": {
     "cadence": "Cadence",
@@ -174,6 +177,10 @@
       "m": "m",
       "h": "h",
       "d": "d"
+    },
+    "cadenceMode": {
+      "rate": "Rate",
+      "delay": "Delay"
     },
     "mode": {
       "Toggle": "Toggle",

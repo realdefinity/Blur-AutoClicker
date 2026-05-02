@@ -765,6 +765,30 @@ export default function SettingsPanel({
           <div className="settings-row">
             <div className="settings-label-group">
               <span className="settings-label">
+                {t("settings.sessionClickCountInTitle")}
+              </span>
+              <span className="settings-sublabel">
+                {t("settings.sessionClickCountInTitleDescription")}
+              </span>
+            </div>
+            <div className="settings-seg-group">
+              {onOffOptions.map((option) => (
+                <button
+                  key={String(option.value)}
+                  className={`settings-seg-btn ${settings.showSessionClickCountInTitle === option.value ? "active" : ""}`}
+                  onClick={() =>
+                    update({ showSessionClickCountInTitle: option.value })
+                  }
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="settings-row">
+            <div className="settings-label-group">
+              <span className="settings-label">
                 {t("settings.strictHotkeyModifiers")}
               </span>
               <span className="settings-sublabel">

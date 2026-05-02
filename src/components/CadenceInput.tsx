@@ -1,15 +1,17 @@
 import type { ChangeEvent, CSSProperties, FocusEvent, WheelEvent } from "react";
 import "./panels/advanced/AdvancedPanel.css";
-import { RATE_INPUT_MODE_OPTIONS } from "../cadence";
 import {
+  RATE_INPUT_MODE_OPTIONS,
   convertDurationToRate,
   convertRateToDuration,
 } from "../cadence";
 import { normalizeIntegerRaw } from "../numberInput";
 import type { RateInputMode, Settings } from "../store";
-import { useTranslation } from "../i18n";
+import { useTranslation, type TranslationKey } from "../i18n";
 import { AdvDropdown } from "./panels/advanced/shared";
 import type { ClickInterval } from "../settingsSchema";
+
+const INTERVAL_KEYS = ["s", "m", "h", "d"] as const;
 
 // TODO: This should really be split up into what is in the advanced panel and what is in the simple panel. Having both in one feels kinda off i feel like.
 
@@ -19,18 +21,6 @@ interface Props {
   variant: "simple" | "advanced";
   showInfo?: boolean;
 }
-
-const INTERVAL_OPTIONS = [
-  { value: "s", label: "Second" },
-  { value: "m", label: "Minute" },
-  { value: "h", label: "Hour" },
-  { value: "d", label: "Day" },
-] as const;
-
-const SIMPLE_RATE_INPUT_MODE_OPTIONS = [
-  { value: "rate", label: "Rate" },
-  { value: "duration", label: "Delay" },
-] as const;
 
 function parseIntegerRaw(raw: string) {
   const normalized = normalizeIntegerRaw(raw);
@@ -122,6 +112,19 @@ function DurationField({
 export default function CadenceInput({ settings, update, variant }: Props) {
   const { t } = useTranslation();
 
+  const intervalOptions = INTERVAL_KEYS.map((value) => ({
+    value,
+    label: t(`options.interval.${value}` as TranslationKey),
+  }));
+
+  const rateInputModeOptions: {
+    value: RateInputMode;
+    label: string;
+  }[] = [
+    { value: "rate", label: t("options.cadenceMode.rate") },
+    { value: "duration", label: t("options.cadenceMode.delay") },
+  ];
+
   const switchMode = (mode: RateInputMode) => {
     if (mode === settings.rateInputMode) return;
 
@@ -167,7 +170,10 @@ export default function CadenceInput({ settings, update, variant }: Props) {
 
   if (variant === "simple") {
     return (
-      <div className="InputBox cadence-box simple-cadence-box">
+      <div
+        className="InputBox cadence-box simple-cadence-box"
+        title={t("advanced.cadenceDescription")}
+      >
         {settings.rateInputMode === "rate" ? (
           <div className="simple-cadence-row">
             <input
@@ -200,7 +206,7 @@ export default function CadenceInput({ settings, update, variant }: Props) {
             <div className="vertical-devider vertical-devider--stretch" />
             <AdvDropdown
               value={settings.clickInterval}
-              options={INTERVAL_OPTIONS}
+              options={intervalOptions}
               allowWindowOverflow
               onChange={(value) =>
                 updateSimpleCadence({ clickInterval: value as ClickInterval })
@@ -209,7 +215,7 @@ export default function CadenceInput({ settings, update, variant }: Props) {
             <div className="vertical-devider vertical-devider--stretch" />
             <AdvDropdown
               value={settings.rateInputMode}
-              options={SIMPLE_RATE_INPUT_MODE_OPTIONS}
+              options={rateInputModeOptions}
               allowWindowOverflow
               onChange={(value) => switchMode(value as RateInputMode)}
             />
@@ -273,11 +279,11 @@ export default function CadenceInput({ settings, update, variant }: Props) {
               />
             </div>
             <div className="vertical-devider vertical-devider--stretch" />
-            <span className="simple-control-label">Per Click</span>
+            <span className="simple-control-label">{t("simple.perClick")}</span>
             <div className="vertical-devider vertical-devider--stretch" />
             <AdvDropdown
               value={settings.rateInputMode}
-              options={SIMPLE_RATE_INPUT_MODE_OPTIONS}
+              options={rateInputModeOptions}
               allowWindowOverflow
               onChange={(value) => switchMode(value as RateInputMode)}
             />
@@ -296,7 +302,9 @@ export default function CadenceInput({ settings, update, variant }: Props) {
           className={`adv-seg-btn ${settings.rateInputMode === mode ? "active" : ""}`}
           onClick={() => switchMode(mode)}
         >
-          {mode === "rate" ? "Rate" : "Delay"}
+          {mode === "rate"
+            ? t("options.cadenceMode.rate")
+            : t("options.cadenceMode.delay")}
         </button>
       ))}
     </div>
@@ -343,7 +351,7 @@ export default function CadenceInput({ settings, update, variant }: Props) {
               <div className="adv-foc adv-foc-grow">
                 <AdvDropdown
                   value={settings.clickInterval}
-                  options={INTERVAL_OPTIONS}
+                  options={intervalOptions}
                   onChange={(v) =>
                     update({ clickInterval: v as ClickInterval })
                   }

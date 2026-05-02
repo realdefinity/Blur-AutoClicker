@@ -80,6 +80,8 @@ export interface Settings extends PresetSnapshot {
   lastPanel: SavedPanel;
   showStopReason: boolean;
   showStopOverlay: boolean;
+  /** While running, append session click count to the centered title text. */
+  showSessionClickCountInTitle: boolean;
   strictHotkeyModifiers: boolean;
   minimizeToTray: boolean;
   theme: Theme;
@@ -242,6 +244,7 @@ export function createDefaultSettings(version: string): Settings {
     lastPanel: "simple",
     showStopReason: true,
     showStopOverlay: true,
+    showSessionClickCountInTitle: true,
     strictHotkeyModifiers: false,
     minimizeToTray: false,
     theme: "dark",
@@ -678,6 +681,10 @@ export function sanitizeSettings(
     theme: sanitizeTheme(saved.theme),
     strictHotkeyModifiers: sanitizeBoolean(saved.strictHotkeyModifiers, defaults.strictHotkeyModifiers),
     minimizeToTray: sanitizeBoolean(saved.minimizeToTray, defaults.minimizeToTray),
+    showSessionClickCountInTitle: sanitizeBoolean(
+      saved.showSessionClickCountInTitle,
+      defaults.showSessionClickCountInTitle,
+    ),
     alwaysOnTop: sanitizeBoolean(saved.alwaysOnTop, defaults.alwaysOnTop),
     accentColor: sanitizeHexColor(saved.accentColor, defaults.accentColor),
     presets,

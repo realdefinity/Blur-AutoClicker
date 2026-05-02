@@ -51,6 +51,8 @@
     "stopHitboxOverlayDescription": "Active ou désactive l'affichage de la zone d'arrêt.",
     "stopReasonAlert": "Alerte de raison d'arrêt",
     "stopReasonAlertDescription": "Affiche dans la barre de titre pourquoi le clicker s'est arrêté.",
+    "sessionClickCountInTitle": "Compteur de clics dans le titre",
+    "sessionClickCountInTitleDescription": "Pendant l'exécution du clicker, affiche le nombre de clics de la session à côté du nom de l'application.",
     "strictHotkeyModifiers": "Modificateurs stricts du raccourci",
     "strictHotkeyModifiersDescription": "Activé : le raccourci ne se déclenche que si les modificateurs correspondent exactement. Désactivé : les modificateurs supplémentaires sont ignorés.",
     "sectionStartup": "Démarrage",
@@ -103,7 +105,8 @@
     "hold": "Durée du clic",
     "holdDescription": "Durée pendant laquelle le bouton de souris reste enfoncé à chaque clic",
     "randomization": "Variation de vitesse",
-    "randomizationDescription": "Change aléatoirement la vitesse de clic dans une plage en % du CPS défini"
+    "randomizationDescription": "Change aléatoirement la vitesse de clic dans une plage en % du CPS défini",
+    "perClick": "Par clic"
   },
   "advanced": {
     "cadence": "Cadence",
@@ -166,6 +169,7 @@
   "options": {
     "interval": { "s": "Seconde", "m": "Minute", "h": "Heure", "d": "Jour" },
     "intervalShort": { "s": "s", "m": "min", "h": "h", "d": "j" },
+    "cadenceMode": { "rate": "Taux", "delay": "Délai" },
     "mode": { "Toggle": "Alterner", "Hold": "Maintenir" },
     "mouseButton": { "Left": "Gauche", "Middle": "Milieu", "Right": "Droit" },
     "mouseClick": { "Left": "Clic gauche", "Middle": "Clic milieu", "Right": "Clic droit" },

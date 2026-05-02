@@ -51,6 +51,8 @@
     "stopHitboxOverlayDescription": "تبديل عرض تراكب منطقة التوقف.",
     "stopReasonAlert": "تنبيه سبب التوقف",
     "stopReasonAlertDescription": "يظهر سبب توقف النقر في شريط العنوان.",
+    "sessionClickCountInTitle": "عدد النقرات المباشر في العنوان",
+    "sessionClickCountInTitleDescription": "أثناء تشغيل النقر، يعرض عدد نقرات الجلسة الحالية بجانب اسم التطبيق.",
     "strictHotkeyModifiers": "معدّلات اختصار صارمة",
     "strictHotkeyModifiersDescription": "تشغيل: يتم تنشيط الاختصار فقط عند تطابق المعدّلات بالضبط. إيقاف: يتم تجاهل المعدّلات الإضافية المضغوطة.",
     "sectionStartup": "بدء التشغيل",
@@ -103,7 +105,8 @@
     "hold": "مدة النقر",
     "holdDescription": "مدة الضغط على زر الماوس خلال كل نقرة",
     "randomization": "تباين السرعة",
-    "randomizationDescription": "يغير سرعة النقر عشوائياً ضمن نسبة مئوية من معدل النقرات في الثانية المحدد"
+    "randomizationDescription": "يغير سرعة النقر عشوائياً ضمن نسبة مئوية من معدل النقرات في الثانية المحدد",
+    "perClick": "لكل نقرة"
   },
   "advanced": {
     "cadence": "الإيقاع",
@@ -175,6 +178,10 @@
       "m": "د",
       "h": "س",
       "d": "ي"
+    },
+    "cadenceMode": {
+      "rate": "معدل",
+      "delay": "تأخير"
     },
     "mode": {
       "Toggle": "تبديل",

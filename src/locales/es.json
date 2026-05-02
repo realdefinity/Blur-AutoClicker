@@ -51,6 +51,8 @@
     "stopHitboxOverlayDescription": "Activa o desactiva la superposición de la zona de parada.",
     "stopReasonAlert": "Aviso de motivo de parada",
     "stopReasonAlertDescription": "Muestra por qué se detuvo el clicker en la barra de título.",
+    "sessionClickCountInTitle": "Contador de clics en el título",
+    "sessionClickCountInTitleDescription": "Mientras el clicker está en marcha, muestra cuántos clics ha enviado esta sesión junto al nombre de la app.",
     "strictHotkeyModifiers": "Modificadores estrictos del atajo",
     "strictHotkeyModifiersDescription": "Activado: el atajo solo se ejecuta cuando los modificadores coinciden exactamente. Desactivado: se ignoran los modificadores extra pulsados.",
     "sectionStartup": "Inicio",
@@ -103,7 +105,8 @@
     "hold": "Duración del clic",
     "holdDescription": "Cuánto tiempo se mantiene pulsado el botón del mouse en cada clic",
     "randomization": "Variación de velocidad",
-    "randomizationDescription": "Cambia aleatoriamente la velocidad de clic dentro del rango porcentual del CPS configurado"
+    "randomizationDescription": "Cambia aleatoriamente la velocidad de clic dentro del rango porcentual del CPS configurado",
+    "perClick": "Por clic"
   },
   "advanced": {
     "cadence": "Cadencia",
@@ -166,6 +169,7 @@
   "options": {
     "interval": { "s": "Segundo", "m": "Minuto", "h": "Hora", "d": "Día" },
     "intervalShort": { "s": "s", "m": "min", "h": "h", "d": "d" },
+    "cadenceMode": { "rate": "Tasa", "delay": "Retraso" },
     "mode": { "Toggle": "Alternar", "Hold": "Mantener" },
     "mouseButton": { "Left": "Izquierdo", "Middle": "Central", "Right": "Derecho" },
     "mouseClick": { "Left": "Clic izquierdo", "Middle": "Clic central", "Right": "Clic derecho" },

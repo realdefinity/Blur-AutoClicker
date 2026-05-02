@@ -21,6 +21,8 @@ interface Props {
   tab: Tab;
   setTab: (t: Tab) => void;
   running: boolean;
+  sessionClickCount: number;
+  showSessionClickCountInTitle: boolean;
   stopReason?: string | null;
   isAlwaysOnTop: boolean;
   onToggleAlwaysOnTop: () => Promise<void>;
@@ -122,6 +124,8 @@ export default function TitleBar({
   tab,
   setTab,
   running,
+  sessionClickCount,
+  showSessionClickCountInTitle,
   stopReason,
   isAlwaysOnTop,
   onToggleAlwaysOnTop,
@@ -183,7 +187,12 @@ export default function TitleBar({
       </div>
 
       <div className="title-wrapper">
-        <AnimatedTitle running={running} stopReason={stopReason} />
+        <AnimatedTitle
+          running={running}
+          stopReason={stopReason}
+          sessionClickCount={sessionClickCount}
+          showSessionClickCountInTitle={showSessionClickCountInTitle}
+        />
       </div>
 
       <div
@@ -258,11 +267,13 @@ export default function TitleBar({
 function AnimatedTitle({
   running,
   stopReason,
-}: Pick<Props, "running" | "stopReason">) {
+  sessionClickCount,
+  showSessionClickCountInTitle,
+}: Pick<Props, "running" | "stopReason" | "sessionClickCount" | "showSessionClickCountInTitle">) {
   const [titleState, setTitleState] = useState(DEFAULT_TITLE_STATE);
   const frameIdsRef = useRef<number[]>([]);
   const timeoutIdsRef = useRef<number[]>([]);
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
 
   const clearScheduledWork = () => {
     frameIdsRef.current.forEach((id) => window.cancelAnimationFrame(id));
@@ -327,11 +338,20 @@ function AnimatedTitle({
     return clearScheduledWork;
   }, [running, stopReason, t]);
 
+  const showLiveCount =
+    running && showSessionClickCountInTitle && !titleState.isReason;
+
   return (
     <span
       className={`window-title title-flipper ${titleState.flipClass} ${titleState.isReason ? "is-reason" : ""}`}
     >
       {titleState.text}
+      {showLiveCount ? (
+        <span className="window-title__session-count" aria-live="polite">
+          {" · "}
+          {sessionClickCount.toLocaleString(language)}
+        </span>
+      ) : null}
     </span>
   );
 }

@@ -51,6 +51,8 @@
     "stopHitboxOverlayDescription": "Schaltet die Anzeige des Stopp-Trefferbereich-Overlays um.",
     "stopReasonAlert": "Stopp-Grund-Warnung",
     "stopReasonAlertDescription": "Zeigt in der Titelleiste an, warum der Klicker gestoppt wurde.",
+    "sessionClickCountInTitle": "Live-Klickzähler in der Titelleiste",
+    "sessionClickCountInTitleDescription": "Zeigt während des Klickens, wie viele Klicks diese Sitzung ausgelöst hat, neben dem App-Namen.",
     "strictHotkeyModifiers": "Strenge Tastenkombinations-Modifikatoren",
     "strictHotkeyModifiersDescription": "Ein: Tastenkombination wird nur ausgelöst, wenn die Modifikatortasten exakt übereinstimmen. Aus: Zusätzlich gedrückte Modifikatoren werden ignoriert.",
     "sectionStartup": "Systemstart",
@@ -103,7 +105,8 @@
     "hold": "Klickdauer",
     "holdDescription": "Wie lange die Maustaste bei jedem Klick gedrückt gehalten wird",
     "randomization": "Geschwindigkeitsvariation",
-    "randomizationDescription": "Ändert die Klickgeschwindigkeit zufällig im % -Bereich der eingestellten CPS"
+    "randomizationDescription": "Ändert die Klickgeschwindigkeit zufällig im % -Bereich der eingestellten CPS",
+    "perClick": "Pro Klick"
   },
   "advanced": {
     "cadence": "Kadenz",
@@ -166,6 +169,7 @@
   "options": {
     "interval": { "s": "Sekunde", "m": "Minute", "h": "Stunde", "d": "Tag" },
     "intervalShort": { "s": "s", "m": "m", "h": "h", "d": "d" },
+    "cadenceMode": { "rate": "Rate", "delay": "Verzögerung" },
     "mode": { "Toggle": "Umschalten", "Hold": "Halten" },
     "mouseButton": { "Left": "Links", "Middle": "Mitte", "Right": "Rechts" },
     "mouseClick": { "Left": "Linksklick", "Middle": "Mittelklick", "Right": "Rechtsklick" },

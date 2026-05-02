@@ -39,6 +39,18 @@
     0 0 18px var(--accent-green-glow-2);
 }
 
+.window-title__session-count {
+  font-weight: var(--font-weight-md);
+  color: color-mix(in srgb, var(--accent-green-strong) 72%, var(--text-muted));
+  text-shadow: none;
+}
+
+.window-title-background[data-running="true"] .window-title__session-count {
+  text-shadow:
+    0 0 8px var(--accent-green-glow-1),
+    0 0 14px var(--accent-green-glow-2);
+}
+
 .settings-button {
   background: transparent;
   border: none;

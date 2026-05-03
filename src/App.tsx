@@ -35,7 +35,7 @@ const SettingsPanel = lazy(() => import("./components/panels/SettingsPanel"));
 const TitleBar = lazy(() => import("./components/TitleBar"));
 export type Tab = "simple" | "advanced" | "zones" | "settings";
 
-const BACKEND_SETTINGS_SCHEMA_VERSION = 8;
+const BACKEND_SETTINGS_SCHEMA_VERSION = 10;
 const MAX_DROPDOWN_OVERFLOW_BOTTOM = 220;
 const OPERATIONAL_SETTING_KEYS = new Set<string>(
   Object.keys(buildPresetSnapshot(DEFAULT_SETTINGS)),
@@ -53,7 +53,7 @@ function getPanelSize(tab: Tab, hasUpdate: boolean) {
   }
   if (tab === "settings") return { width: 560, height: 620 + extra };
   if (tab === "zones") return { width: 550, height: 400 + extra };
-  return { width: 860, height: 527 + extra };
+  return { width: 860, height: 720 + extra };
 }
 
 const textScale = await invoke<number>("get_text_scale_factor");
@@ -86,6 +86,7 @@ async function getClampedPanelSize(
 
 const DEFAULT_STATUS: ClickerStatus = {
   running: false,
+  paused: false,
   clickCount: 0,
   lastError: null,
   stopReason: null,
@@ -110,6 +111,15 @@ async function registerHotkeyCandidate(hotkey: string) {
   return invoke<string>("register_hotkey", { hotkey: canonicalHotkey });
 }
 
+async function registerPauseHotkeyCandidate(hotkey: string) {
+  const trimmed = hotkey.trim();
+  if (!trimmed) {
+    return invoke<string>("register_pause_hotkey", { hotkey: "" });
+  }
+  const canonicalHotkey = await canonicalizeHotkeyForBackend(trimmed);
+  return invoke<string>("register_pause_hotkey", { hotkey: canonicalHotkey });
+}
+
 function wait(ms: number) {
   return new Promise((resolve) => window.setTimeout(resolve, ms));
 }
@@ -129,9 +139,12 @@ export default function App() {
 
   const hotkeyTimer = useRef<number | null>(null);
   const hotkeyRequestIdRef = useRef(0);
+  const pauseHotkeyTimer = useRef<number | null>(null);
+  const pauseHotkeyRequestIdRef = useRef(0);
   const uiSettingsRef = useRef<Settings>(DEFAULT_SETTINGS);
   const committedSettingsRef = useRef<Settings>(DEFAULT_SETTINGS);
   const lastValidHotkeyRef = useRef(DEFAULT_SETTINGS.hotkey);
+  const lastValidPauseHotkeyRef = useRef(DEFAULT_SETTINGS.pauseHotkey);
   const launchWindowPlacementDone = useRef(false);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const resizeTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -181,6 +194,18 @@ export default function App() {
     });
   };
 
+  const restoreLastValidPauseHotkey = () => {
+    const restored = lastValidPauseHotkeyRef.current;
+    if (uiSettingsRef.current.pauseHotkey === restored) {
+      return;
+    }
+
+    setUiSettings({
+      ...uiSettingsRef.current,
+      pauseHotkey: restored,
+    });
+  };
+
   const queueHotkeyRegistration = (hotkey: string) => {
     if (!settingsLoaded) {
       return;
@@ -223,11 +248,53 @@ export default function App() {
     }, 250);
   };
 
+  const queuePauseHotkeyRegistration = (hotkey: string) => {
+    if (!settingsLoaded) {
+      return;
+    }
+
+    if (pauseHotkeyTimer.current !== null) {
+      window.clearTimeout(pauseHotkeyTimer.current);
+    }
+
+    const requestId = ++pauseHotkeyRequestIdRef.current;
+    pauseHotkeyTimer.current = window.setTimeout(() => {
+      pauseHotkeyTimer.current = null;
+
+      registerPauseHotkeyCandidate(hotkey)
+        .then((normalizedHotkey) => {
+          if (pauseHotkeyRequestIdRef.current !== requestId) {
+            return;
+          }
+
+          lastValidPauseHotkeyRef.current = normalizedHotkey;
+          const nextCommittedSettings = {
+            ...committedSettingsRef.current,
+            pauseHotkey: normalizedHotkey,
+          };
+          const nextUiSettings = {
+            ...uiSettingsRef.current,
+            pauseHotkey: normalizedHotkey,
+          };
+
+          persistCommittedSettings(nextCommittedSettings, nextUiSettings);
+        })
+        .catch((err) => {
+          if (pauseHotkeyRequestIdRef.current !== requestId) {
+            return;
+          }
+
+          console.error("Failed to register pause hotkey:", err);
+          restoreLastValidPauseHotkey();
+        });
+    }, 250);
+  };
+
   const updateSettings = (
     patch: Partial<Settings>,
     options: UpdateSettingsOptions = {},
   ) => {
-    const { hotkey, ...rest } = patch;
+    const { hotkey, pauseHotkey, ...rest } = patch;
     const shouldClearActivePreset =
       !options.preserveActivePreset &&
       (hotkey !== undefined ||
@@ -257,6 +324,14 @@ export default function App() {
         hotkey,
       });
       queueHotkeyRegistration(hotkey);
+    }
+
+    if (pauseHotkey !== undefined) {
+      setUiSettings({
+        ...uiSettingsRef.current,
+        pauseHotkey,
+      });
+      queuePauseHotkeyRegistration(pauseHotkey);
     }
   };
 
@@ -490,18 +565,41 @@ export default function App() {
         }
 
         lastValidHotkeyRef.current = hydratedSettings.hotkey;
+
+        let pauseHotkeyHydrated = hydratedSettings.pauseHotkey;
+        try {
+          pauseHotkeyHydrated = await registerPauseHotkeyCandidate(
+            hydratedSettings.pauseHotkey ?? "",
+          );
+        } catch (err) {
+          console.error("Failed to register saved pause hotkey:", err);
+          pauseHotkeyHydrated = lastValidPauseHotkeyRef.current;
+        }
+
+        if (pauseHotkeyHydrated !== hydratedSettings.pauseHotkey) {
+          hydratedSettings = {
+            ...hydratedSettings,
+            pauseHotkey: pauseHotkeyHydrated,
+          };
+        }
+
+        lastValidPauseHotkeyRef.current = hydratedSettings.pauseHotkey;
         uiSettingsRef.current = hydratedSettings;
         committedSettingsRef.current = hydratedSettings;
 
         setTab(hydratedSettings.lastPanel);
         setSettings(hydratedSettings);
-        setStatus(loadedStatus);
+        setStatus({
+          ...loadedStatus,
+          paused: loadedStatus.paused ?? false,
+        });
         setSettingsLoaded(true);
 
         await syncSettingsToBackend(hydratedSettings);
 
         if (
           hydratedSettings.hotkey !== loadedSettings.hotkey ||
+          hydratedSettings.pauseHotkey !== loadedSettings.pauseHotkey ||
           hydratedSettings.alwaysOnTop !== loadedSettings.alwaysOnTop
         ) {
           await saveSettings(hydratedSettings);
@@ -517,6 +615,9 @@ export default function App() {
       mounted = false;
       if (hotkeyTimer.current !== null) {
         window.clearTimeout(hotkeyTimer.current);
+      }
+      if (pauseHotkeyTimer.current !== null) {
+        window.clearTimeout(pauseHotkeyTimer.current);
       }
       if (saveTimerRef.current) {
         clearTimeout(saveTimerRef.current);
@@ -743,6 +844,7 @@ export default function App() {
           tab={tab}
           setTab={handleTabChange}
           running={status.running}
+          paused={status.paused}
           sessionClickCount={status.clickCount}
           showSessionClickCountInTitle={settings.showSessionClickCountInTitle}
           sessionElapsedSecs={sessionElapsedSecs}

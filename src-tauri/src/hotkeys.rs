@@ -1,3 +1,4 @@
+use crate::engine::worker::emit_status;
 use crate::engine::worker::now_epoch_ms;
 use crate::engine::worker::start_clicker_inner;
 use crate::engine::worker::stop_clicker_inner;
@@ -30,6 +31,26 @@ pub fn register_hotkey_inner(app: &AppHandle, hotkey: String) -> Result<String, 
         .store(true, Ordering::SeqCst);
     *state.registered_hotkey.lock().unwrap() = Some(binding.clone());
 
+    Ok(format_hotkey_binding(&binding))
+}
+
+pub fn register_pause_hotkey_inner(app: &AppHandle, hotkey: String) -> Result<String, String> {
+    let state = app.state::<ClickerState>();
+    let trimmed = hotkey.trim();
+    if trimmed.is_empty() {
+        *state.registered_pause_hotkey.lock().unwrap() = None;
+        emit_status(app);
+        return Ok(String::new());
+    }
+    let binding = parse_hotkey_binding(trimmed)?;
+    state
+        .suppress_hotkey_until_ms
+        .store(now_epoch_ms().saturating_add(250), Ordering::SeqCst);
+    state
+        .suppress_hotkey_until_release
+        .store(true, Ordering::SeqCst);
+    *state.registered_pause_hotkey.lock().unwrap() = Some(binding.clone());
+    emit_status(app);
     Ok(format_hotkey_binding(&binding))
 }
 
@@ -151,16 +172,23 @@ pub fn format_hotkey_binding(binding: &HotkeyBinding) -> String {
 pub fn start_hotkey_listener(app: AppHandle) {
     std::thread::spawn(move || {
         let mut was_pressed = false;
+        let mut pause_was_pressed = false;
 
         loop {
-            let (binding, strict) = {
+            let (binding, pause_binding, strict) = {
                 let state = app.state::<ClickerState>();
                 let binding = state.registered_hotkey.lock().unwrap().clone();
+                let pause_binding = state.registered_pause_hotkey.lock().unwrap().clone();
                 let strict = state.settings.lock().unwrap().strict_hotkey_modifiers;
-                (binding, strict)
+                (binding, pause_binding, strict)
             };
 
             let currently_pressed = binding
+                .as_ref()
+                .map(|binding| is_hotkey_binding_pressed(binding, strict))
+                .unwrap_or(false);
+
+            let pause_pressed = pause_binding
                 .as_ref()
                 .map(|binding| is_hotkey_binding_pressed(binding, strict))
                 .unwrap_or(false);
@@ -180,13 +208,15 @@ pub fn start_hotkey_listener(app: AppHandle) {
 
             if hotkey_capture_active {
                 was_pressed = currently_pressed;
+                pause_was_pressed = pause_pressed;
                 std::thread::sleep(Duration::from_millis(12));
                 continue;
             }
 
             if suppress_until_release {
-                if currently_pressed {
-                    was_pressed = true;
+                if currently_pressed || pause_pressed {
+                    was_pressed = currently_pressed;
+                    pause_was_pressed = pause_pressed;
                     std::thread::sleep(Duration::from_millis(12));
                     continue;
                 }
@@ -195,15 +225,22 @@ pub fn start_hotkey_listener(app: AppHandle) {
                     .suppress_hotkey_until_release
                     .store(false, Ordering::SeqCst);
                 was_pressed = false;
+                pause_was_pressed = false;
                 std::thread::sleep(Duration::from_millis(12));
                 continue;
             }
 
             if now_epoch_ms() < suppress_until {
                 was_pressed = currently_pressed;
+                pause_was_pressed = pause_pressed;
                 std::thread::sleep(Duration::from_millis(12));
                 continue;
             }
+
+            if pause_pressed && !pause_was_pressed {
+                handle_pause_hotkey_edge(&app);
+            }
+            pause_was_pressed = pause_pressed;
 
             if currently_pressed && !was_pressed {
                 handle_hotkey_pressed(&app);
@@ -215,6 +252,16 @@ pub fn start_hotkey_listener(app: AppHandle) {
             std::thread::sleep(Duration::from_millis(12));
         }
     });
+}
+
+fn handle_pause_hotkey_edge(app: &AppHandle) {
+    let state = app.state::<ClickerState>();
+    if !state.running.load(Ordering::SeqCst) {
+        return;
+    }
+    let paused = state.paused.load(Ordering::SeqCst);
+    state.paused.store(!paused, Ordering::SeqCst);
+    emit_status(app);
 }
 
 pub fn handle_hotkey_pressed(app: &AppHandle) {

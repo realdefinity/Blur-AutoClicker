@@ -1,9 +1,9 @@
 use std::time::Duration;
 
 use windows_sys::Win32::UI::Input::KeyboardAndMouse::{
-    SendInput, INPUT, INPUT_MOUSE, MOUSEEVENTF_LEFTDOWN, MOUSEEVENTF_LEFTUP,
-    MOUSEEVENTF_MIDDLEDOWN, MOUSEEVENTF_MIDDLEUP, MOUSEEVENTF_RIGHTDOWN, MOUSEEVENTF_RIGHTUP,
-    MOUSEINPUT,
+    SendInput, INPUT, INPUT_KEYBOARD, INPUT_MOUSE, KEYBDINPUT, KEYEVENTF_KEYUP,
+    MOUSEEVENTF_LEFTDOWN, MOUSEEVENTF_LEFTUP, MOUSEEVENTF_MIDDLEDOWN, MOUSEEVENTF_MIDDLEUP,
+    MOUSEEVENTF_RIGHTDOWN, MOUSEEVENTF_RIGHTUP, MOUSEINPUT,
 };
 use windows_sys::Win32::UI::WindowsAndMessaging::{
     GetSystemMetrics, SetCursorPos, SM_CXVIRTUALSCREEN, SM_CYVIRTUALSCREEN, SM_XVIRTUALSCREEN,
@@ -214,43 +214,122 @@ where
     true
 }
 
-pub fn send_clicks(
-    down: u32,
-    up: u32,
+#[inline]
+fn alternate_mouse_button(base: i32, index: usize) -> i32 {
+    match base {
+        1 => {
+            if index % 2 == 0 {
+                1
+            } else {
+                2
+            }
+        }
+        2 => {
+            if index % 2 == 0 {
+                2
+            } else {
+                1
+            }
+        }
+        _ => base,
+    }
+}
+
+fn keybd_input(vk: u16, key_up: bool) -> INPUT {
+    INPUT {
+        r#type: INPUT_KEYBOARD,
+        Anonymous: windows_sys::Win32::UI::Input::KeyboardAndMouse::INPUT_0 {
+            ki: KEYBDINPUT {
+                wVk: vk,
+                wScan: 0,
+                dwFlags: if key_up { KEYEVENTF_KEYUP } else { 0 },
+                time: 0,
+                dwExtraInfo: 0,
+            },
+        },
+    }
+}
+
+fn send_keybd(vk: u16, key_up: bool) {
+    let input = keybd_input(vk, key_up);
+    unsafe { SendInput(1, &input, std::mem::size_of::<INPUT>() as i32) };
+}
+
+pub fn with_click_modifiers<F: FnOnce()>(ctrl: bool, shift: bool, alt: bool, body: F) {
+    const VK_MENU: u16 = 0x12;
+    const VK_CONTROL: u16 = 0x11;
+    const VK_SHIFT: u16 = 0x10;
+
+    let mut order: Vec<u16> = Vec::new();
+    if alt {
+        order.push(VK_MENU);
+    }
+    if ctrl {
+        order.push(VK_CONTROL);
+    }
+    if shift {
+        order.push(VK_SHIFT);
+    }
+
+    for vk in &order {
+        send_keybd(*vk, false);
+    }
+    body();
+    for vk in order.iter().rev() {
+        send_keybd(*vk, true);
+    }
+}
+
+pub fn send_physical_clicks(
+    base_button: i32,
     count: usize,
     hold_ms: u32,
-    use_double_click_gap: bool,
-    double_click_delay_ms: u32,
+    inter_click_gap_ms: u32,
+    use_gap: bool,
+    alternate_lr: bool,
+    ctrl: bool,
+    shift: bool,
+    alt: bool,
     control: &RunControl,
 ) {
     if count == 0 {
         return;
     }
 
-    if !use_double_click_gap && count > 1 && hold_ms == 0 {
-        send_batch(down, up, count, hold_ms);
-        return;
-    }
-
-    let is_active = || control.is_active();
-    let mut send_event = |flags| send_mouse_event(flags);
-    let mut sleep_for = |duration| sleep_interruptible(duration, control);
-
-    for index in 0..count {
-        if !dispatch_click(
-            down,
-            up,
-            hold_ms,
-            &mut send_event,
-            &mut sleep_for,
-            &is_active,
-        ) {
-            return;
+    let run_clicks = || {
+        for index in 0..count {
+            if !control.is_active() {
+                return;
+            }
+            let b = if alternate_lr {
+                alternate_mouse_button(base_button, index)
+            } else {
+                base_button
+            };
+            let (down, up) = get_button_flags(b);
+            let is_active = || control.is_active();
+            let mut send_event = |flags| send_mouse_event(flags);
+            let mut sleep_for = |duration| sleep_interruptible(duration, control);
+            if !dispatch_click(
+                down,
+                up,
+                hold_ms,
+                &mut send_event,
+                &mut sleep_for,
+                &is_active,
+            ) {
+                return;
+            }
+            if index + 1 < count && use_gap && inter_click_gap_ms > 0 {
+                control.sleep_for_session(Duration::from_millis(inter_click_gap_ms as u64));
+            }
         }
+    };
 
-        if index + 1 < count && use_double_click_gap && double_click_delay_ms > 0 {
-            sleep_interruptible(Duration::from_millis(double_click_delay_ms as u64), control);
-        }
+    if ctrl || shift || alt {
+        with_click_modifiers(ctrl, shift, alt, run_clicks);
+    } else {
+        run_clicks();
     }
 }
 

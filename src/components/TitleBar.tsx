@@ -21,6 +21,7 @@ interface Props {
   tab: Tab;
   setTab: (t: Tab) => void;
   running: boolean;
+  paused: boolean;
   sessionClickCount: number;
   showSessionClickCountInTitle: boolean;
   sessionElapsedSecs: number;
@@ -138,6 +139,7 @@ export default function TitleBar({
   tab,
   setTab,
   running,
+  paused,
   sessionClickCount,
   showSessionClickCountInTitle,
   sessionElapsedSecs,
@@ -205,6 +207,7 @@ export default function TitleBar({
       <div className="title-wrapper">
         <AnimatedTitle
           running={running}
+          paused={paused}
           stopReason={stopReason}
           sessionClickCount={sessionClickCount}
           showSessionClickCountInTitle={showSessionClickCountInTitle}
@@ -284,6 +287,7 @@ export default function TitleBar({
 
 function AnimatedTitle({
   running,
+  paused,
   stopReason,
   sessionClickCount,
   showSessionClickCountInTitle,
@@ -292,6 +296,7 @@ function AnimatedTitle({
 }: Pick<
   Props,
   | "running"
+  | "paused"
   | "stopReason"
   | "sessionClickCount"
   | "showSessionClickCountInTitle"
@@ -370,6 +375,7 @@ function AnimatedTitle({
     running && showSessionClickCountInTitle && !titleState.isReason;
   const showLiveElapsed =
     running && showSessionElapsedInTitle && !titleState.isReason;
+  const showPaused = running && paused && !titleState.isReason;
 
   return (
     <span
@@ -386,6 +392,12 @@ function AnimatedTitle({
         <span className="window-title__session-elapsed" aria-live="polite">
           {" · "}
           {formatSessionElapsed(sessionElapsedSecs)}
+        </span>
+      ) : null}
+      {showPaused ? (
+        <span className="window-title__paused" aria-live="polite">
+          {" · "}
+          {t("titleBar.paused")}
         </span>
       ) : null}
     </span>

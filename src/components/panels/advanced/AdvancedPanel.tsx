@@ -8,6 +8,8 @@ import SpeedVariationSection from "./SpeedVariationSection";
 import DoubleClickSection from "./DoubleClickSection";
 import SequenceSection from "./SequenceSection";
 import LimitsSection from "./LimitsSection";
+import ClickPatternsSection from "./ClickPatternsSection";
+import ScreenTriggerSection from "./ScreenTriggerSection";
 
 interface Props {
   settings: Settings;
@@ -71,6 +73,8 @@ export default function AdvancedPanel({
           <LimitsSection settings={settings} update={update} showInfo={showInfo} />
           <SpeedVariationSection settings={settings} update={update} showInfo={showInfo} />
           <DoubleClickSection settings={settings} update={update} showInfo={showInfo} />
+          <ClickPatternsSection settings={settings} update={update} showInfo={showInfo} />
+          <ScreenTriggerSection settings={settings} update={update} showInfo={showInfo} />
         </div>
 
         <div className="adv-col">

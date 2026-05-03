@@ -8,6 +8,11 @@ export type SavedPanel = "simple" | "advanced" | "zones";
 export type Theme = "dark" | "light";
 export type PresetId = string;
 export type RateInputMode = "rate" | "duration";
+export type ScreenTriggerMode =
+  | "whileMatch"
+  | "onAppear"
+  | "onDisappear"
+  | "onChange";
 
 export interface SequencePoint {
   id: string;
@@ -49,6 +54,46 @@ export interface PresetSnapshot {
   edgeStopBottom: number;
   edgeStopLeft: number;
   edgeStopRight: number;
+  burstModeEnabled: boolean;
+  burstClicksBeforeRest: number;
+  burstRestMs: number;
+  rampUpSeconds: number;
+  rampDownSeconds: number;
+  scheduleEnabled: boolean;
+  schedulePhase1Seconds: number;
+  schedulePhase1SpeedMult: number;
+  schedulePhase2Seconds: number;
+  schedulePhase2SpeedMult: number;
+  fixedHoldEnabled: boolean;
+  fixedHoldMs: number;
+  clicksPerGesture: number;
+  alternateButtonsEnabled: boolean;
+  cursorJitterPx: number;
+  oneShotEnabled: boolean;
+  oneShotClickCount: number;
+  clickWithCtrl: boolean;
+  clickWithShift: boolean;
+  clickWithAlt: boolean;
+  gridClickEnabled: boolean;
+  gridCols: number;
+  gridRows: number;
+  gridSpacingPx: number;
+  linePathEnabled: boolean;
+  lineSteps: number;
+  lineEndOffsetX: number;
+  lineEndOffsetY: number;
+  screenTriggerEnabled: boolean;
+  screenTriggerMode: ScreenTriggerMode;
+  screenTriggerX: number;
+  screenTriggerY: number;
+  screenTriggerWidth: number;
+  screenTriggerHeight: number;
+  screenTriggerRefR: number;
+  screenTriggerRefG: number;
+  screenTriggerRefB: number;
+  screenTriggerTolerance: number;
+  screenTriggerChangeSensitivity: number;
+  screenTriggerHasReference: boolean;
 }
 
 export interface PresetDefinition {
@@ -91,6 +136,8 @@ export interface Settings extends PresetSnapshot {
   accentColor: string;
   presets: PresetDefinition[];
   activePresetId: PresetId | null;
+  /** Second hotkey: pause/resume clicking while session stays "running". */
+  pauseHotkey: string;
 }
 
 export const DEFAULT_ACCENT_COLOR = "#8b5cf6";
@@ -124,6 +171,22 @@ export const SETTINGS_LIMITS = {
   durationMilliseconds: { min: 0, max: 999 },
   stopZoneDimension: { min: 1 },
   sequencePointClicks: { min: 1, max: 1000 },
+  burstClicksBeforeRest: { min: 1, max: 500 },
+  burstRestMs: { min: 0, max: 60_000 },
+  rampSeconds: { min: 0, max: 600 },
+  schedulePhaseSeconds: { min: 0, max: 86_400 },
+  speedMultiplier: { min: 0.05, max: 5 },
+  fixedHoldMs: { min: 0, max: 5000 },
+  clicksPerGesture: { min: 1, max: 5 },
+  cursorJitterPx: { min: 0, max: 80 },
+  oneShotClickCount: { min: 1, max: 10_000_000 },
+  gridDimension: { min: 1, max: 80 },
+  gridSpacingPx: { min: 1, max: 2000 },
+  lineSteps: { min: 2, max: 2000 },
+  lineOffset: { min: -16_000, max: 16_000 },
+  screenTriggerTolerance: { min: 0, max: 100 },
+  screenTriggerChangeSensitivity: { min: 0, max: 100 },
+  screenTriggerRegionSize: { min: 1, max: 512 },
 } as const;
 
 export const PRESET_SNAPSHOT_KEYS = [
@@ -152,6 +215,46 @@ export const PRESET_SNAPSHOT_KEYS = [
   "edgeStopBottom",
   "edgeStopLeft",
   "edgeStopRight",
+  "burstModeEnabled",
+  "burstClicksBeforeRest",
+  "burstRestMs",
+  "rampUpSeconds",
+  "rampDownSeconds",
+  "scheduleEnabled",
+  "schedulePhase1Seconds",
+  "schedulePhase1SpeedMult",
+  "schedulePhase2Seconds",
+  "schedulePhase2SpeedMult",
+  "fixedHoldEnabled",
+  "fixedHoldMs",
+  "clicksPerGesture",
+  "alternateButtonsEnabled",
+  "cursorJitterPx",
+  "oneShotEnabled",
+  "oneShotClickCount",
+  "clickWithCtrl",
+  "clickWithShift",
+  "clickWithAlt",
+  "gridClickEnabled",
+  "gridCols",
+  "gridRows",
+  "gridSpacingPx",
+  "linePathEnabled",
+  "lineSteps",
+  "lineEndOffsetX",
+  "lineEndOffsetY",
+  "screenTriggerEnabled",
+  "screenTriggerMode",
+  "screenTriggerX",
+  "screenTriggerY",
+  "screenTriggerWidth",
+  "screenTriggerHeight",
+  "screenTriggerRefR",
+  "screenTriggerRefG",
+  "screenTriggerRefB",
+  "screenTriggerTolerance",
+  "screenTriggerChangeSensitivity",
+  "screenTriggerHasReference",
 ] as const satisfies ReadonlyArray<keyof PresetSnapshot>;
 
 export function clampNumber(
@@ -168,6 +271,28 @@ export function clampNumber(
 
 export function sanitizeBoolean(value: unknown, fallback: boolean): boolean {
   return typeof value === "boolean" ? value : fallback;
+}
+
+function migrateClicksPerGesture(
+  saved: { clicksPerGesture?: unknown; doubleClickEnabled?: unknown },
+  defaults: Pick<PresetSnapshot, "clicksPerGesture" | "doubleClickEnabled">,
+): number {
+  const raw = saved.clicksPerGesture;
+  if (typeof raw === "number" && Number.isFinite(raw)) {
+    return clampNumber(
+      raw,
+      defaults.clicksPerGesture,
+      SETTINGS_LIMITS.clicksPerGesture.min,
+      SETTINGS_LIMITS.clicksPerGesture.max,
+    );
+  }
+  const dc = sanitizeBoolean(saved.doubleClickEnabled, defaults.doubleClickEnabled);
+  return clampNumber(
+    dc ? 2 : defaults.clicksPerGesture,
+    defaults.clicksPerGesture,
+    SETTINGS_LIMITS.clicksPerGesture.min,
+    SETTINGS_LIMITS.clicksPerGesture.max,
+  );
 }
 
 function sanitizeSavedPanel(value: unknown): SavedPanel {
@@ -229,6 +354,46 @@ export function createDefaultSettings(version: string): Settings {
     edgeStopBottom: 40,
     edgeStopLeft: 40,
     edgeStopRight: 40,
+    burstModeEnabled: false,
+    burstClicksBeforeRest: 5,
+    burstRestMs: 200,
+    rampUpSeconds: 0,
+    rampDownSeconds: 0,
+    scheduleEnabled: false,
+    schedulePhase1Seconds: 10,
+    schedulePhase1SpeedMult: 0.5,
+    schedulePhase2Seconds: 60,
+    schedulePhase2SpeedMult: 1,
+    fixedHoldEnabled: false,
+    fixedHoldMs: 40,
+    clicksPerGesture: 1,
+    alternateButtonsEnabled: false,
+    cursorJitterPx: 0,
+    oneShotEnabled: false,
+    oneShotClickCount: 100,
+    clickWithCtrl: false,
+    clickWithShift: false,
+    clickWithAlt: false,
+    gridClickEnabled: false,
+    gridCols: 3,
+    gridRows: 3,
+    gridSpacingPx: 40,
+    linePathEnabled: false,
+    lineSteps: 10,
+    lineEndOffsetX: 200,
+    lineEndOffsetY: 0,
+    screenTriggerEnabled: false,
+    screenTriggerMode: "whileMatch",
+    screenTriggerX: 0,
+    screenTriggerY: 0,
+    screenTriggerWidth: 32,
+    screenTriggerHeight: 32,
+    screenTriggerRefR: 0,
+    screenTriggerRefG: 0,
+    screenTriggerRefB: 0,
+    screenTriggerTolerance: 18,
+    screenTriggerChangeSensitivity: 12,
+    screenTriggerHasReference: false,
     rateInputMode: "rate",
     durationHours: 0,
     durationMinutes: 0,
@@ -255,6 +420,7 @@ export function createDefaultSettings(version: string): Settings {
     accentColor: DEFAULT_ACCENT_COLOR,
     presets: [],
     activePresetId: null,
+    pauseHotkey: "",
   };
 }
 
@@ -285,6 +451,46 @@ export function buildPresetSnapshot(settings: Settings): PresetSnapshot {
     edgeStopBottom: settings.edgeStopBottom,
     edgeStopLeft: settings.edgeStopLeft,
     edgeStopRight: settings.edgeStopRight,
+    burstModeEnabled: settings.burstModeEnabled,
+    burstClicksBeforeRest: settings.burstClicksBeforeRest,
+    burstRestMs: settings.burstRestMs,
+    rampUpSeconds: settings.rampUpSeconds,
+    rampDownSeconds: settings.rampDownSeconds,
+    scheduleEnabled: settings.scheduleEnabled,
+    schedulePhase1Seconds: settings.schedulePhase1Seconds,
+    schedulePhase1SpeedMult: settings.schedulePhase1SpeedMult,
+    schedulePhase2Seconds: settings.schedulePhase2Seconds,
+    schedulePhase2SpeedMult: settings.schedulePhase2SpeedMult,
+    fixedHoldEnabled: settings.fixedHoldEnabled,
+    fixedHoldMs: settings.fixedHoldMs,
+    clicksPerGesture: settings.clicksPerGesture,
+    alternateButtonsEnabled: settings.alternateButtonsEnabled,
+    cursorJitterPx: settings.cursorJitterPx,
+    oneShotEnabled: settings.oneShotEnabled,
+    oneShotClickCount: settings.oneShotClickCount,
+    clickWithCtrl: settings.clickWithCtrl,
+    clickWithShift: settings.clickWithShift,
+    clickWithAlt: settings.clickWithAlt,
+    gridClickEnabled: settings.gridClickEnabled,
+    gridCols: settings.gridCols,
+    gridRows: settings.gridRows,
+    gridSpacingPx: settings.gridSpacingPx,
+    linePathEnabled: settings.linePathEnabled,
+    lineSteps: settings.lineSteps,
+    lineEndOffsetX: settings.lineEndOffsetX,
+    lineEndOffsetY: settings.lineEndOffsetY,
+    screenTriggerEnabled: settings.screenTriggerEnabled,
+    screenTriggerMode: settings.screenTriggerMode,
+    screenTriggerX: settings.screenTriggerX,
+    screenTriggerY: settings.screenTriggerY,
+    screenTriggerWidth: settings.screenTriggerWidth,
+    screenTriggerHeight: settings.screenTriggerHeight,
+    screenTriggerRefR: settings.screenTriggerRefR,
+    screenTriggerRefG: settings.screenTriggerRefG,
+    screenTriggerRefB: settings.screenTriggerRefB,
+    screenTriggerTolerance: settings.screenTriggerTolerance,
+    screenTriggerChangeSensitivity: settings.screenTriggerChangeSensitivity,
+    screenTriggerHasReference: settings.screenTriggerHasReference,
   };
 }
 
@@ -450,11 +656,195 @@ function sanitizePresetSnapshot(
       SETTINGS_LIMITS.stopBoundary.min,
       SETTINGS_LIMITS.stopBoundary.max,
     ),
+    burstModeEnabled: sanitizeBoolean(
+      saved.burstModeEnabled,
+      defaults.burstModeEnabled,
+    ),
+    burstClicksBeforeRest: clampNumber(
+      saved.burstClicksBeforeRest,
+      defaults.burstClicksBeforeRest,
+      SETTINGS_LIMITS.burstClicksBeforeRest.min,
+      SETTINGS_LIMITS.burstClicksBeforeRest.max,
+    ),
+    burstRestMs: clampNumber(
+      saved.burstRestMs,
+      defaults.burstRestMs,
+      SETTINGS_LIMITS.burstRestMs.min,
+      SETTINGS_LIMITS.burstRestMs.max,
+    ),
+    rampUpSeconds: clampNumber(
+      saved.rampUpSeconds,
+      defaults.rampUpSeconds,
+      SETTINGS_LIMITS.rampSeconds.min,
+      SETTINGS_LIMITS.rampSeconds.max,
+    ),
+    rampDownSeconds: clampNumber(
+      saved.rampDownSeconds,
+      defaults.rampDownSeconds,
+      SETTINGS_LIMITS.rampSeconds.min,
+      SETTINGS_LIMITS.rampSeconds.max,
+    ),
+    scheduleEnabled: sanitizeBoolean(
+      saved.scheduleEnabled,
+      defaults.scheduleEnabled,
+    ),
+    schedulePhase1Seconds: clampNumber(
+      saved.schedulePhase1Seconds,
+      defaults.schedulePhase1Seconds,
+      SETTINGS_LIMITS.schedulePhaseSeconds.min,
+      SETTINGS_LIMITS.schedulePhaseSeconds.max,
+    ),
+    schedulePhase1SpeedMult: clampNumber(
+      saved.schedulePhase1SpeedMult,
+      defaults.schedulePhase1SpeedMult,
+      SETTINGS_LIMITS.speedMultiplier.min,
+      SETTINGS_LIMITS.speedMultiplier.max,
+    ),
+    schedulePhase2Seconds: clampNumber(
+      saved.schedulePhase2Seconds,
+      defaults.schedulePhase2Seconds,
+      SETTINGS_LIMITS.schedulePhaseSeconds.min,
+      SETTINGS_LIMITS.schedulePhaseSeconds.max,
+    ),
+    schedulePhase2SpeedMult: clampNumber(
+      saved.schedulePhase2SpeedMult,
+      defaults.schedulePhase2SpeedMult,
+      SETTINGS_LIMITS.speedMultiplier.min,
+      SETTINGS_LIMITS.speedMultiplier.max,
+    ),
+    fixedHoldEnabled: sanitizeBoolean(
+      saved.fixedHoldEnabled,
+      defaults.fixedHoldEnabled,
+    ),
+    fixedHoldMs: clampNumber(
+      saved.fixedHoldMs,
+      defaults.fixedHoldMs,
+      SETTINGS_LIMITS.fixedHoldMs.min,
+      SETTINGS_LIMITS.fixedHoldMs.max,
+    ),
+    clicksPerGesture: migrateClicksPerGesture(saved, defaults),
+    alternateButtonsEnabled: sanitizeBoolean(
+      saved.alternateButtonsEnabled,
+      defaults.alternateButtonsEnabled,
+    ),
+    cursorJitterPx: clampNumber(
+      saved.cursorJitterPx,
+      defaults.cursorJitterPx,
+      SETTINGS_LIMITS.cursorJitterPx.min,
+      SETTINGS_LIMITS.cursorJitterPx.max,
+    ),
+    oneShotEnabled: sanitizeBoolean(
+      saved.oneShotEnabled,
+      defaults.oneShotEnabled,
+    ),
+    oneShotClickCount: clampNumber(
+      saved.oneShotClickCount,
+      defaults.oneShotClickCount,
+      SETTINGS_LIMITS.oneShotClickCount.min,
+      SETTINGS_LIMITS.oneShotClickCount.max,
+    ),
+    clickWithCtrl: sanitizeBoolean(
+      saved.clickWithCtrl,
+      defaults.clickWithCtrl,
+    ),
+    clickWithShift: sanitizeBoolean(
+      saved.clickWithShift,
+      defaults.clickWithShift,
+    ),
+    clickWithAlt: sanitizeBoolean(saved.clickWithAlt, defaults.clickWithAlt),
+    gridClickEnabled: sanitizeBoolean(
+      saved.gridClickEnabled,
+      defaults.gridClickEnabled,
+    ),
+    gridCols: clampNumber(
+      saved.gridCols,
+      defaults.gridCols,
+      SETTINGS_LIMITS.gridDimension.min,
+      SETTINGS_LIMITS.gridDimension.max,
+    ),
+    gridRows: clampNumber(
+      saved.gridRows,
+      defaults.gridRows,
+      SETTINGS_LIMITS.gridDimension.min,
+      SETTINGS_LIMITS.gridDimension.max,
+    ),
+    gridSpacingPx: clampNumber(
+      saved.gridSpacingPx,
+      defaults.gridSpacingPx,
+      SETTINGS_LIMITS.gridSpacingPx.min,
+      SETTINGS_LIMITS.gridSpacingPx.max,
+    ),
+    linePathEnabled: sanitizeBoolean(
+      saved.linePathEnabled,
+      defaults.linePathEnabled,
+    ),
+    lineSteps: clampNumber(
+      saved.lineSteps,
+      defaults.lineSteps,
+      SETTINGS_LIMITS.lineSteps.min,
+      SETTINGS_LIMITS.lineSteps.max,
+    ),
+    lineEndOffsetX: clampNumber(
+      saved.lineEndOffsetX,
+      defaults.lineEndOffsetX,
+      SETTINGS_LIMITS.lineOffset.min,
+      SETTINGS_LIMITS.lineOffset.max,
+    ),
+    lineEndOffsetY: clampNumber(
+      saved.lineEndOffsetY,
+      defaults.lineEndOffsetY,
+      SETTINGS_LIMITS.lineOffset.min,
+      SETTINGS_LIMITS.lineOffset.max,
+    ),
+    screenTriggerEnabled: sanitizeBoolean(
+      saved.screenTriggerEnabled,
+      defaults.screenTriggerEnabled,
+    ),
+    screenTriggerMode: sanitizeScreenTriggerMode(saved.screenTriggerMode),
+    screenTriggerX: clampNumber(saved.screenTriggerX, defaults.screenTriggerX),
+    screenTriggerY: clampNumber(saved.screenTriggerY, defaults.screenTriggerY),
+    screenTriggerWidth: clampNumber(
+      saved.screenTriggerWidth,
+      defaults.screenTriggerWidth,
+      SETTINGS_LIMITS.screenTriggerRegionSize.min,
+      SETTINGS_LIMITS.screenTriggerRegionSize.max,
+    ),
+    screenTriggerHeight: clampNumber(
+      saved.screenTriggerHeight,
+      defaults.screenTriggerHeight,
+      SETTINGS_LIMITS.screenTriggerRegionSize.min,
+      SETTINGS_LIMITS.screenTriggerRegionSize.max,
+    ),
+    screenTriggerRefR: clampNumber(saved.screenTriggerRefR, defaults.screenTriggerRefR, 0, 255),
+    screenTriggerRefG: clampNumber(saved.screenTriggerRefG, defaults.screenTriggerRefG, 0, 255),
+    screenTriggerRefB: clampNumber(saved.screenTriggerRefB, defaults.screenTriggerRefB, 0, 255),
+    screenTriggerTolerance: clampNumber(
+      saved.screenTriggerTolerance,
+      defaults.screenTriggerTolerance,
+      SETTINGS_LIMITS.screenTriggerTolerance.min,
+      SETTINGS_LIMITS.screenTriggerTolerance.max,
+    ),
+    screenTriggerChangeSensitivity: clampNumber(
+      saved.screenTriggerChangeSensitivity,
+      defaults.screenTriggerChangeSensitivity,
+      SETTINGS_LIMITS.screenTriggerChangeSensitivity.min,
+      SETTINGS_LIMITS.screenTriggerChangeSensitivity.max,
+    ),
+    screenTriggerHasReference: sanitizeBoolean(
+      saved.screenTriggerHasReference,
+      defaults.screenTriggerHasReference,
+    ),
   };
 }
 
 function sanitizeRateInputMode(value: unknown): RateInputMode {
   return value === "duration" ? "duration" : "rate";
+}
+
+function sanitizeScreenTriggerMode(value: unknown): ScreenTriggerMode {
+  return value === "onAppear" || value === "onDisappear" || value === "onChange"
+    ? value
+    : "whileMatch";
 }
 
 function sanitizeSequencePoints(value: unknown): SequencePoint[] {
@@ -667,6 +1057,186 @@ export function sanitizeSettings(
       SETTINGS_LIMITS.stopBoundary.min,
       SETTINGS_LIMITS.stopBoundary.max,
     ),
+    burstModeEnabled: sanitizeBoolean(
+      saved.burstModeEnabled,
+      defaults.burstModeEnabled,
+    ),
+    burstClicksBeforeRest: clampNumber(
+      saved.burstClicksBeforeRest,
+      defaults.burstClicksBeforeRest,
+      SETTINGS_LIMITS.burstClicksBeforeRest.min,
+      SETTINGS_LIMITS.burstClicksBeforeRest.max,
+    ),
+    burstRestMs: clampNumber(
+      saved.burstRestMs,
+      defaults.burstRestMs,
+      SETTINGS_LIMITS.burstRestMs.min,
+      SETTINGS_LIMITS.burstRestMs.max,
+    ),
+    rampUpSeconds: clampNumber(
+      saved.rampUpSeconds,
+      defaults.rampUpSeconds,
+      SETTINGS_LIMITS.rampSeconds.min,
+      SETTINGS_LIMITS.rampSeconds.max,
+    ),
+    rampDownSeconds: clampNumber(
+      saved.rampDownSeconds,
+      defaults.rampDownSeconds,
+      SETTINGS_LIMITS.rampSeconds.min,
+      SETTINGS_LIMITS.rampSeconds.max,
+    ),
+    scheduleEnabled: sanitizeBoolean(
+      saved.scheduleEnabled,
+      defaults.scheduleEnabled,
+    ),
+    schedulePhase1Seconds: clampNumber(
+      saved.schedulePhase1Seconds,
+      defaults.schedulePhase1Seconds,
+      SETTINGS_LIMITS.schedulePhaseSeconds.min,
+      SETTINGS_LIMITS.schedulePhaseSeconds.max,
+    ),
+    schedulePhase1SpeedMult: clampNumber(
+      saved.schedulePhase1SpeedMult,
+      defaults.schedulePhase1SpeedMult,
+      SETTINGS_LIMITS.speedMultiplier.min,
+      SETTINGS_LIMITS.speedMultiplier.max,
+    ),
+    schedulePhase2Seconds: clampNumber(
+      saved.schedulePhase2Seconds,
+      defaults.schedulePhase2Seconds,
+      SETTINGS_LIMITS.schedulePhaseSeconds.min,
+      SETTINGS_LIMITS.schedulePhaseSeconds.max,
+    ),
+    schedulePhase2SpeedMult: clampNumber(
+      saved.schedulePhase2SpeedMult,
+      defaults.schedulePhase2SpeedMult,
+      SETTINGS_LIMITS.speedMultiplier.min,
+      SETTINGS_LIMITS.speedMultiplier.max,
+    ),
+    fixedHoldEnabled: sanitizeBoolean(
+      saved.fixedHoldEnabled,
+      defaults.fixedHoldEnabled,
+    ),
+    fixedHoldMs: clampNumber(
+      saved.fixedHoldMs,
+      defaults.fixedHoldMs,
+      SETTINGS_LIMITS.fixedHoldMs.min,
+      SETTINGS_LIMITS.fixedHoldMs.max,
+    ),
+    clicksPerGesture: migrateClicksPerGesture(saved, defaults),
+    alternateButtonsEnabled: sanitizeBoolean(
+      saved.alternateButtonsEnabled,
+      defaults.alternateButtonsEnabled,
+    ),
+    cursorJitterPx: clampNumber(
+      saved.cursorJitterPx,
+      defaults.cursorJitterPx,
+      SETTINGS_LIMITS.cursorJitterPx.min,
+      SETTINGS_LIMITS.cursorJitterPx.max,
+    ),
+    oneShotEnabled: sanitizeBoolean(
+      saved.oneShotEnabled,
+      defaults.oneShotEnabled,
+    ),
+    oneShotClickCount: clampNumber(
+      saved.oneShotClickCount,
+      defaults.oneShotClickCount,
+      SETTINGS_LIMITS.oneShotClickCount.min,
+      SETTINGS_LIMITS.oneShotClickCount.max,
+    ),
+    clickWithCtrl: sanitizeBoolean(
+      saved.clickWithCtrl,
+      defaults.clickWithCtrl,
+    ),
+    clickWithShift: sanitizeBoolean(
+      saved.clickWithShift,
+      defaults.clickWithShift,
+    ),
+    clickWithAlt: sanitizeBoolean(saved.clickWithAlt, defaults.clickWithAlt),
+    gridClickEnabled: sanitizeBoolean(
+      saved.gridClickEnabled,
+      defaults.gridClickEnabled,
+    ),
+    gridCols: clampNumber(
+      saved.gridCols,
+      defaults.gridCols,
+      SETTINGS_LIMITS.gridDimension.min,
+      SETTINGS_LIMITS.gridDimension.max,
+    ),
+    gridRows: clampNumber(
+      saved.gridRows,
+      defaults.gridRows,
+      SETTINGS_LIMITS.gridDimension.min,
+      SETTINGS_LIMITS.gridDimension.max,
+    ),
+    gridSpacingPx: clampNumber(
+      saved.gridSpacingPx,
+      defaults.gridSpacingPx,
+      SETTINGS_LIMITS.gridSpacingPx.min,
+      SETTINGS_LIMITS.gridSpacingPx.max,
+    ),
+    linePathEnabled: sanitizeBoolean(
+      saved.linePathEnabled,
+      defaults.linePathEnabled,
+    ),
+    lineSteps: clampNumber(
+      saved.lineSteps,
+      defaults.lineSteps,
+      SETTINGS_LIMITS.lineSteps.min,
+      SETTINGS_LIMITS.lineSteps.max,
+    ),
+    lineEndOffsetX: clampNumber(
+      saved.lineEndOffsetX,
+      defaults.lineEndOffsetX,
+      SETTINGS_LIMITS.lineOffset.min,
+      SETTINGS_LIMITS.lineOffset.max,
+    ),
+    lineEndOffsetY: clampNumber(
+      saved.lineEndOffsetY,
+      defaults.lineEndOffsetY,
+      SETTINGS_LIMITS.lineOffset.min,
+      SETTINGS_LIMITS.lineOffset.max,
+    ),
+    screenTriggerEnabled: sanitizeBoolean(
+      saved.screenTriggerEnabled,
+      defaults.screenTriggerEnabled,
+    ),
+    screenTriggerMode: sanitizeScreenTriggerMode(saved.screenTriggerMode),
+    screenTriggerX: clampNumber(saved.screenTriggerX, defaults.screenTriggerX),
+    screenTriggerY: clampNumber(saved.screenTriggerY, defaults.screenTriggerY),
+    screenTriggerWidth: clampNumber(
+      saved.screenTriggerWidth,
+      defaults.screenTriggerWidth,
+      SETTINGS_LIMITS.screenTriggerRegionSize.min,
+      SETTINGS_LIMITS.screenTriggerRegionSize.max,
+    ),
+    screenTriggerHeight: clampNumber(
+      saved.screenTriggerHeight,
+      defaults.screenTriggerHeight,
+      SETTINGS_LIMITS.screenTriggerRegionSize.min,
+      SETTINGS_LIMITS.screenTriggerRegionSize.max,
+    ),
+    screenTriggerRefR: clampNumber(saved.screenTriggerRefR, defaults.screenTriggerRefR, 0, 255),
+    screenTriggerRefG: clampNumber(saved.screenTriggerRefG, defaults.screenTriggerRefG, 0, 255),
+    screenTriggerRefB: clampNumber(saved.screenTriggerRefB, defaults.screenTriggerRefB, 0, 255),
+    screenTriggerTolerance: clampNumber(
+      saved.screenTriggerTolerance,
+      defaults.screenTriggerTolerance,
+      SETTINGS_LIMITS.screenTriggerTolerance.min,
+      SETTINGS_LIMITS.screenTriggerTolerance.max,
+    ),
+    screenTriggerChangeSensitivity: clampNumber(
+      saved.screenTriggerChangeSensitivity,
+      defaults.screenTriggerChangeSensitivity,
+      SETTINGS_LIMITS.screenTriggerChangeSensitivity.min,
+      SETTINGS_LIMITS.screenTriggerChangeSensitivity.max,
+    ),
+    screenTriggerHasReference: sanitizeBoolean(
+      saved.screenTriggerHasReference,
+      defaults.screenTriggerHasReference,
+    ),
+    pauseHotkey:
+      typeof saved.pauseHotkey === "string" ? saved.pauseHotkey : defaults.pauseHotkey,
     rateInputMode: sanitizeRateInputMode(saved.rateInputMode),
     durationHours: clampNumber(saved.durationHours, defaults.durationHours, SETTINGS_LIMITS.durationHours.min, SETTINGS_LIMITS.durationHours.max),
     durationMinutes: clampNumber(saved.durationMinutes, defaults.durationMinutes, SETTINGS_LIMITS.durationMinutes.min),

@@ -75,7 +75,16 @@ export default function DoubleClickSection({
           </Disableable>
           <ToggleBtn
             value={settings.doubleClickEnabled}
-            onChange={(v) => update({ doubleClickEnabled: v })}
+            onChange={(v) =>
+              update(
+                v
+                  ? {
+                      doubleClickEnabled: true,
+                      clicksPerGesture: Math.max(2, settings.clicksPerGesture),
+                    }
+                  : { doubleClickEnabled: false },
+              )
+            }
             disabled={doubleClickDisabled}
             disabledReason={doubleClickDisabledReason}
           />

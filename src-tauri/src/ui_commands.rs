@@ -11,11 +11,13 @@ use crate::ClickerState;
 use crate::ClickerStatusPayload;
 
 use crate::engine::mouse::current_cursor_position;
+use crate::engine::screen_trigger::sample_reference_rgb;
 use crate::engine::worker::current_status;
 use crate::engine::worker::now_epoch_ms;
 use crate::engine::worker::start_clicker_inner;
 use crate::engine::worker::stop_clicker_inner;
 use crate::hotkeys::register_hotkey_inner;
+use crate::hotkeys::register_pause_hotkey_inner;
 
 #[tauri::command]
 pub fn get_text_scale_factor() -> f64 {
@@ -119,6 +121,7 @@ pub fn reset_settings(app: AppHandle) -> Result<ClickerSettings, String> {
         *state.settings.lock().unwrap() = defaults.clone();
     }
     register_hotkey_inner(&app, defaults.hotkey.clone())?;
+    register_pause_hotkey_inner(&app, defaults.pause_hotkey.clone())?;
     Ok(defaults)
 }
 
@@ -130,6 +133,11 @@ pub fn get_status(app: AppHandle) -> Result<ClickerStatusPayload, String> {
 #[tauri::command]
 pub fn register_hotkey(app: AppHandle, hotkey: String) -> Result<String, String> {
     register_hotkey_inner(&app, hotkey)
+}
+
+#[tauri::command]
+pub fn register_pause_hotkey(app: AppHandle, hotkey: String) -> Result<String, String> {
+    register_pause_hotkey_inner(&app, hotkey)
 }
 
 #[tauri::command]
@@ -148,6 +156,26 @@ pub fn set_hotkey_capture_active(app: AppHandle, active: bool) -> Result<(), Str
     }
 
     Ok(())
+}
+
+#[derive(Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SampleRgbPayload {
+    pub r: u8,
+    pub g: u8,
+    pub b: u8,
+}
+
+#[tauri::command]
+pub fn sample_screen_region(
+    x: i32,
+    y: i32,
+    width: i32,
+    height: i32,
+) -> Result<SampleRgbPayload, String> {
+    let (r, g, b) = sample_reference_rgb(x, y, width, height)
+        .ok_or_else(|| String::from("Could not capture that screen region"))?;
+    Ok(SampleRgbPayload { r, g, b })
 }
 
 #[tauri::command]

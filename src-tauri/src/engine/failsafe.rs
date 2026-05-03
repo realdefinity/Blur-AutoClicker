@@ -105,11 +105,12 @@ pub fn should_stop_for_failsafe(config: &ClickerConfig) -> Option<String> {
 
 #[cfg(test)]
 mod tests {
+    use super::super::PathMode;
     use super::*;
 
     fn sample_config() -> ClickerConfig {
         ClickerConfig {
-            interval_secs: 0.04,
+            base_interval_secs: 0.04,
             variation: 0.0,
             limit: 0,
             duty: 45.0,
@@ -117,7 +118,6 @@ mod tests {
             button: 1,
             double_click_enabled: false,
             double_click_delay_ms: 40,
-            sequence_enabled: false,
             sequence_points: Vec::new(),
             offset: 0.0,
             offset_chance: 0.0,
@@ -134,6 +134,32 @@ mod tests {
             edge_stop_right: 40,
             edge_stop_bottom: 40,
             edge_stop_left: 40,
+            path_mode: PathMode::None,
+            grid_cols: 3,
+            grid_rows: 3,
+            grid_spacing_px: 40,
+            line_steps: 10,
+            line_end_dx: 200,
+            line_end_dy: 0,
+            clicks_per_gesture: 1,
+            burst_mode_enabled: false,
+            burst_clicks_before_rest: 5,
+            burst_rest_ms: 200,
+            ramp_up_seconds: 0.0,
+            ramp_down_seconds: 0.0,
+            schedule_enabled: false,
+            schedule_phase1_seconds: 10.0,
+            schedule_phase1_mult: 0.5,
+            schedule_phase2_seconds: 60.0,
+            schedule_phase2_mult: 1.0,
+            fixed_hold_enabled: false,
+            fixed_hold_ms: 40,
+            alternate_buttons: false,
+            click_with_ctrl: false,
+            click_with_shift: false,
+            click_with_alt: false,
+            cursor_jitter_px: 0,
+            screen_trigger: crate::engine::screen_trigger::ScreenTriggerConfig::default(),
         }
     }
 

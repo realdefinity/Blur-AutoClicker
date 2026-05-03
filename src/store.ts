@@ -19,6 +19,7 @@ export type {
   PresetSnapshot,
   RateInputMode,
   SavedPanel,
+  ScreenTriggerMode,
   SequencePoint,
   Settings,
   Theme,
@@ -27,6 +28,7 @@ export type {
 
 export interface ClickerStatus {
   running: boolean;
+  paused: boolean;
   clickCount: number;
   lastError: string | null;
   stopReason: string | null;

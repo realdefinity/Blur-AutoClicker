@@ -12,6 +12,7 @@ use crate::app_state::ClickerState;
 use crate::app_state::ClickerStatusPayload;
 use crate::engine::worker::emit_status;
 use crate::hotkeys::register_hotkey_inner;
+use crate::hotkeys::register_pause_hotkey_inner;
 use crate::hotkeys::start_hotkey_listener;
 use std::sync::atomic::{AtomicBool, AtomicI64, AtomicU64};
 use std::sync::{Arc, Mutex};
@@ -30,12 +31,14 @@ pub fn run() {
         .plugin(tauri_plugin_updater::Builder::new().build())
         .manage(ClickerState {
             running: Arc::new(AtomicBool::new(false)),
+            paused: Arc::new(AtomicBool::new(false)),
             run_generation: AtomicU64::new(0),
             settings: Mutex::new(ClickerSettings::default()),
             last_error: Mutex::new(None),
             stop_reason: Mutex::new(None),
             active_sequence_index: AtomicI64::new(-1),
             registered_hotkey: Mutex::new(None),
+            registered_pause_hotkey: Mutex::new(None),
             suppress_hotkey_until_ms: AtomicU64::new(0),
             suppress_hotkey_until_release: AtomicBool::new(false),
             hotkey_capture_active: AtomicBool::new(false),
@@ -118,15 +121,16 @@ pub fn run() {
                 }
             });
 
-            let initial_hotkey = {
+            let (initial_hotkey, initial_pause) = {
                 let state = app.state::<ClickerState>();
-                let hotkey = state.settings.lock().unwrap().hotkey.clone();
-                hotkey
+                let s = state.settings.lock().unwrap();
+                (s.hotkey.clone(), s.pause_hotkey.clone())
             };
 
             let handle = app.handle().clone();
             start_hotkey_listener(handle.clone());
             register_hotkey_inner(&handle, initial_hotkey).map_err(std::io::Error::other)?;
+            let _ = register_pause_hotkey_inner(&handle, initial_pause);
             emit_status(&handle);
             overlay::init_overlay(app.handle())?;
 
@@ -149,8 +153,10 @@ pub fn run() {
             ui_commands::reset_settings,
             ui_commands::get_status,
             ui_commands::register_hotkey,
+            ui_commands::register_pause_hotkey,
             ui_commands::set_hotkey_capture_active,
             ui_commands::pick_position,
+            ui_commands::sample_screen_region,
             ui_commands::get_app_info,
             ui_commands::get_stats,
             ui_commands::reset_stats,

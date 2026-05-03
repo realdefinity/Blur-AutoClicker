@@ -88,6 +88,35 @@ export default function CadenceSection({ settings, update, showInfo }: Props) {
           }}
         >
           {showInfo ? (
+            <InfoIcon text={t("advanced.pauseHotkeyDescription")} />
+          ) : null}
+          <span className="adv-label">{t("advanced.pauseHotkey")}</span>
+        </div>
+        <div className="adv-row" style={{ marginLeft: "auto", gap: 8 }}>
+          <div className="adv-textbox">
+            <HotkeyCaptureInput
+              className="adv-textbox-text"
+              value={settings.pauseHotkey}
+              onChange={(pauseHotkey: string) => update({ pauseHotkey })}
+              style={{
+                background: "transparent",
+                border: "none",
+                outline: "none",
+                width: "150px",
+              }}
+            />
+          </div>
+        </div>
+      </div>
+      <div className="adv-row" style={{ marginTop: rowSpacing }}>
+        <div
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "0.5rem",
+          }}
+        >
+          {showInfo ? (
             <InfoIcon text={t("advanced.mouseButtonDescription")} />
           ) : null}
           <span className="adv-label">{t("advanced.mouseButton")}</span>

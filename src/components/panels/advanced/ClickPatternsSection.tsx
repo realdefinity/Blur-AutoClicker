@@ -1,7 +1,13 @@
 import type { Settings } from "../../../store";
 import { useTranslation } from "../../../i18n";
 import { SETTINGS_LIMITS } from "../../../settingsSchema";
-import { Disableable, InfoIcon, NumInput, ToggleBtn } from "./shared";
+import {
+  AdvSelectDropdown,
+  Disableable,
+  InfoIcon,
+  NumInput,
+  ToggleBtn,
+} from "./shared";
 
 interface Props {
   settings: Settings;
@@ -17,6 +23,16 @@ export default function ClickPatternsSection({
   const { t } = useTranslation();
   const pathConflict =
     settings.sequenceEnabled && settings.sequencePoints.length > 0;
+  const modifierValues = [
+    settings.clickWithCtrl ? "ctrl" : null,
+    settings.clickWithShift ? "shift" : null,
+    settings.clickWithAlt ? "alt" : null,
+  ].filter((value): value is string => value !== null);
+  const modifierOptions = [
+    { value: "ctrl", label: "Ctrl" },
+    { value: "shift", label: "Shift" },
+    { value: "alt", label: "Alt" },
+  ];
 
   return (
     <div className="adv-sectioncontainer adv-basic-card">
@@ -180,27 +196,19 @@ export default function ClickPatternsSection({
 
       <div className="adv-row" style={{ marginTop: 12, flexWrap: "wrap", gap: 8 }}>
         <span className="adv-label">{t("advanced.clickPatternsModifiers")}</span>
-        <ToggleBtn
-          value={settings.clickWithCtrl}
-          onChange={(v) => update({ clickWithCtrl: v })}
+        <AdvSelectDropdown
+          multiple
+          values={modifierValues}
+          options={modifierOptions}
+          placeholder={t("common.none")}
+          onValuesChange={(values) =>
+            update({
+              clickWithCtrl: values.includes("ctrl"),
+              clickWithShift: values.includes("shift"),
+              clickWithAlt: values.includes("alt"),
+            })
+          }
         />
-        <span className="adv-label" style={{ minWidth: "2rem" }}>
-          Ctrl
-        </span>
-        <ToggleBtn
-          value={settings.clickWithShift}
-          onChange={(v) => update({ clickWithShift: v })}
-        />
-        <span className="adv-label" style={{ minWidth: "2rem" }}>
-          Shift
-        </span>
-        <ToggleBtn
-          value={settings.clickWithAlt}
-          onChange={(v) => update({ clickWithAlt: v })}
-        />
-        <span className="adv-label" style={{ minWidth: "2rem" }}>
-          Alt
-        </span>
       </div>
 
       <div className="adv-row" style={{ marginTop: 12, flexWrap: "wrap", gap: 8 }}>

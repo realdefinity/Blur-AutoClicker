@@ -37,6 +37,7 @@ export interface PresetSnapshot {
   dutyCycle: number;
   speedVariationEnabled: boolean;
   speedVariation: number;
+  smartPerformanceEnabled: boolean;
   doubleClickEnabled: boolean;
   doubleClickDelay: number;
   clickLimitEnabled: boolean;
@@ -198,6 +199,7 @@ export const PRESET_SNAPSHOT_KEYS = [
   "dutyCycle",
   "speedVariationEnabled",
   "speedVariation",
+  "smartPerformanceEnabled",
   "doubleClickEnabled",
   "doubleClickDelay",
   "clickLimitEnabled",
@@ -337,6 +339,7 @@ export function createDefaultSettings(version: string): Settings {
     dutyCycle: 45,
     speedVariationEnabled: true,
     speedVariation: 35,
+    smartPerformanceEnabled: true,
     doubleClickEnabled: false,
     doubleClickDelay: 40,
     clickLimitEnabled: false,
@@ -434,6 +437,7 @@ export function buildPresetSnapshot(settings: Settings): PresetSnapshot {
     dutyCycle: settings.dutyCycle,
     speedVariationEnabled: settings.speedVariationEnabled,
     speedVariation: settings.speedVariation,
+    smartPerformanceEnabled: settings.smartPerformanceEnabled,
     doubleClickEnabled: settings.doubleClickEnabled,
     doubleClickDelay: settings.doubleClickDelay,
     clickLimitEnabled: settings.clickLimitEnabled,
@@ -566,6 +570,10 @@ function sanitizePresetSnapshot(
       defaults.speedVariation,
       SETTINGS_LIMITS.speedVariation.min,
       SETTINGS_LIMITS.speedVariation.max,
+    ),
+    smartPerformanceEnabled: sanitizeBoolean(
+      saved.smartPerformanceEnabled,
+      defaults.smartPerformanceEnabled,
     ),
     doubleClickEnabled: sanitizeBoolean(
       saved.doubleClickEnabled,
@@ -971,6 +979,10 @@ export function sanitizeSettings(
       legacySpeedVariation,
       SETTINGS_LIMITS.speedVariation.min,
       SETTINGS_LIMITS.speedVariation.max,
+    ),
+    smartPerformanceEnabled: sanitizeBoolean(
+      saved.smartPerformanceEnabled,
+      defaults.smartPerformanceEnabled,
     ),
     doubleClickEnabled: sanitizeBoolean(
       saved.doubleClickEnabled,

@@ -40,6 +40,7 @@ export function ToggleBtn({
     <div className="adv-toggle-group">
       <button
         className={`adv-toggle-btn adv-toggle-off ${!value ? "active" : ""} ${disabled ? "adv-disabled" : ""}`}
+        data-toggle-label={t("common.off")}
         onClick={() => !disabled && onChange(false)}
         disabled={disabled}
       >
@@ -47,6 +48,7 @@ export function ToggleBtn({
       </button>
       <button
         className={`adv-toggle-btn adv-toggle-on ${value ? "active" : ""} ${disabled ? "adv-disabled" : ""}`}
+        data-toggle-label={t("common.on")}
         onClick={() => !disabled && onChange(true)}
         disabled={disabled}
       >
@@ -467,6 +469,179 @@ export function AdvDropdown({
                 {option.label}
               </button>
             ))}
+          </div>,
+          document.body,
+        )}
+    </div>
+  );
+}
+
+export function AdvSelectDropdown({
+  value,
+  values,
+  options,
+  onChange,
+  onValuesChange,
+  multiple = false,
+  placeholder,
+}: {
+  value?: string;
+  values?: readonly string[];
+  options: readonly { value: string; label: string }[];
+  onChange?: (value: string) => void;
+  onValuesChange?: (values: string[]) => void;
+  multiple?: boolean;
+  placeholder?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const [positioned, setPositioned] = useState(false);
+  const [placement, setPlacement] = useState<"below" | "above">("below");
+  const [pos, setPos] = useState({ top: 0, left: 0, width: 0 });
+  const ref = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const selectedValues = values ?? (value ? [value] : []);
+
+  const selectedLabels = options
+    .filter((option) => selectedValues.includes(option.value))
+    .map((option) => option.label);
+  const activeLabel =
+    selectedLabels.length > 0 ? selectedLabels.join(", ") : (placeholder ?? "None");
+
+  const toggleOption = (nextValue: string) => {
+    if (!multiple) {
+      onChange?.(nextValue);
+      setOpen(false);
+      return;
+    }
+
+    const next = selectedValues.includes(nextValue)
+      ? selectedValues.filter((item) => item !== nextValue)
+      : [...selectedValues, nextValue];
+    onValuesChange?.(next);
+  };
+
+  useLayoutEffect(() => {
+    if (!open) return;
+
+    const updatePosition = () => {
+      const trigger = ref.current;
+      if (!trigger) return;
+
+      const rect = trigger.getBoundingClientRect();
+      const menuHeight = menuRef.current?.offsetHeight ?? 0;
+      const spacing = 6;
+      const fitsBelow =
+        rect.bottom + spacing + menuHeight <= window.innerHeight;
+      const fitsAbove = rect.top - spacing - menuHeight >= 0;
+      const nextPlacement = !fitsBelow && fitsAbove ? "above" : "below";
+      const top =
+        nextPlacement === "below"
+          ? rect.bottom + spacing
+          : rect.top - spacing - menuHeight;
+
+      setPlacement(nextPlacement);
+      setPos({ top, left: rect.left, width: rect.width });
+      setPositioned(true);
+    };
+
+    const frame = window.requestAnimationFrame(updatePosition);
+    window.addEventListener("resize", updatePosition);
+    window.addEventListener("scroll", updatePosition, true);
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.removeEventListener("resize", updatePosition);
+      window.removeEventListener("scroll", updatePosition, true);
+    };
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+
+    const handleClick = (event: MouseEvent) => {
+      const target = event.target as Node;
+      if (
+        ref.current &&
+        !ref.current.contains(target) &&
+        menuRef.current &&
+        !menuRef.current.contains(target)
+      ) {
+        setOpen(false);
+      }
+    };
+
+    const handleKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClick);
+    document.addEventListener("keydown", handleKey);
+    return () => {
+      document.removeEventListener("mousedown", handleClick);
+      document.removeEventListener("keydown", handleKey);
+    };
+  }, [open]);
+
+  return (
+    <div className="adv-select" ref={ref}>
+      <button
+        type="button"
+        className="adv-select-trigger"
+        data-open={open}
+        onClick={() => {
+          setPositioned(false);
+          setOpen((current) => !current);
+        }}
+      >
+        <span className="adv-select-value">{activeLabel}</span>
+        <span className="adv-select-chevron" aria-hidden="true">
+          <svg width="10" height="6" viewBox="0 0 10 6" fill="none">
+            <path
+              d="M1 1L5 5L9 1"
+              stroke="currentColor"
+              strokeWidth="1.25"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </span>
+      </button>
+      {open &&
+        createPortal(
+          <div
+            ref={menuRef}
+            className="adv-select-menu"
+            data-placement={placement}
+            aria-hidden={!positioned}
+            style={{
+              position: "fixed",
+              top: pos.top,
+              left: pos.left,
+              minWidth: pos.width,
+              zIndex: 10000,
+              visibility: positioned ? "visible" : "hidden",
+              pointerEvents: positioned ? "auto" : "none",
+            }}
+          >
+            {options.map((option) => {
+              const selected = selectedValues.includes(option.value);
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  className="adv-select-item"
+                  data-selected={selected}
+                  onClick={() => toggleOption(option.value)}
+                >
+                  <span className="adv-select-check" aria-hidden="true">
+                    {selected ? "x" : ""}
+                  </span>
+                  <span>{option.label}</span>
+                </button>
+              );
+            })}
           </div>,
           document.body,
         )}

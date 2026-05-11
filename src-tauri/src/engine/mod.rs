@@ -29,6 +29,7 @@ pub enum PathMode {
 pub struct ClickerConfig {
     pub base_interval_secs: f64,
     pub variation: f64,
+    pub smart_performance_enabled: bool,
     pub limit: i32,
     pub duty: f64,
     pub time_limit: f64,

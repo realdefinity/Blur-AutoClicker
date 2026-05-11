@@ -31,6 +31,8 @@ pub struct ClickerSettings {
     pub duty_cycle: f64,
     pub speed_variation_enabled: bool,
     pub speed_variation: f64,
+    #[serde(default = "default_smart_performance_enabled")]
+    pub smart_performance_enabled: bool,
     pub double_click_enabled: bool,
     pub double_click_delay: u32,
     pub click_limit_enabled: bool,
@@ -151,6 +153,10 @@ fn default_burst_clicks_before_rest() -> u32 {
     5
 }
 
+fn default_smart_performance_enabled() -> bool {
+    true
+}
+
 fn default_burst_rest_ms() -> u32 {
     200
 }
@@ -238,6 +244,7 @@ impl Default for ClickerSettings {
             duty_cycle: 45.0,
             speed_variation_enabled: true,
             speed_variation: 35.0,
+            smart_performance_enabled: true,
             double_click_enabled: false,
             double_click_delay: 40,
             click_limit_enabled: false,

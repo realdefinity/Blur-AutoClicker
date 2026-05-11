@@ -169,8 +169,12 @@ pub fn send_mouse_event(flags: u32) {
     unsafe { SendInput(1, &input, std::mem::size_of::<INPUT>() as i32) };
 }
 
-pub fn send_batch(down: u32, up: u32, n: usize, _hold_ms: u32) {
-    let mut inputs: Vec<INPUT> = Vec::with_capacity(n * 2);
+pub fn send_batch(down: u32, up: u32, n: usize, inputs: &mut Vec<INPUT>) {
+    inputs.clear();
+    let needed = n.saturating_mul(2);
+    if inputs.capacity() < needed {
+        inputs.reserve(needed - inputs.capacity());
+    }
     for _ in 0..n {
         inputs.push(make_input(down, 0));
         inputs.push(make_input(up, 0));

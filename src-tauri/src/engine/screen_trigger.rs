@@ -4,8 +4,7 @@ use std::mem::zeroed;
 
 use windows_sys::Win32::Graphics::Gdi::{
     BitBlt, CreateCompatibleBitmap, CreateCompatibleDC, DeleteDC, DeleteObject, GetDC, GetDIBits,
-    ReleaseDC, SelectObject, BI_RGB, BITMAPINFO, BITMAPINFOHEADER, DIB_RGB_COLORS, HGDI_OBJ,
-    HGDIOBJ,
+    ReleaseDC, SelectObject, BI_RGB, BITMAPINFO, BITMAPINFOHEADER, DIB_RGB_COLORS, HGDIOBJ,
 };
 use windows_sys::Win32::UI::WindowsAndMessaging::{
     GetSystemMetrics, SM_CXVIRTUALSCREEN, SM_CYVIRTUALSCREEN, SM_XVIRTUALSCREEN, SM_YVIRTUALSCREEN,
@@ -160,7 +159,7 @@ pub fn capture_screen_region_mean_rgb(x: i32, y: i32, w: i32, h: i32) -> Option<
 
         if ok == 0 {
             SelectObject(hdc_mem, old);
-            DeleteObject(hbmp as HGDI_OBJ);
+            DeleteObject(hbmp as HGDIOBJ);
             DeleteDC(hdc_mem);
             ReleaseDC(0, hdc_screen);
             return None;
@@ -188,7 +187,7 @@ pub fn capture_screen_region_mean_rgb(x: i32, y: i32, w: i32, h: i32) -> Option<
         );
 
         SelectObject(hdc_mem, old);
-        DeleteObject(hbmp as HGDI_OBJ);
+        DeleteObject(hbmp as HGDIOBJ);
         DeleteDC(hdc_mem);
         ReleaseDC(0, hdc_screen);
 

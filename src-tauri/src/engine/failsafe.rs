@@ -1,5 +1,59 @@
 use super::mouse::{current_cursor_position, current_monitor_rects, VirtualScreenRect};
 use super::ClickerConfig;
+use std::time::{Duration, Instant};
+
+const MONITOR_REFRESH_INTERVAL: Duration = Duration::from_secs(1);
+const FAILSAFE_CHECK_INTERVAL: Duration = Duration::from_millis(8);
+
+pub struct FailsafeChecker {
+    enabled: bool,
+    monitors: Vec<VirtualScreenRect>,
+    last_monitor_refresh: Instant,
+    last_check: Instant,
+}
+
+impl FailsafeChecker {
+    pub fn new(config: &ClickerConfig) -> Self {
+        let enabled = config.custom_stop_zone_enabled
+            || config.corner_stop_enabled
+            || config.edge_stop_enabled;
+        Self {
+            enabled,
+            monitors: if enabled {
+                current_monitor_rects().unwrap_or_default()
+            } else {
+                Vec::new()
+            },
+            last_monitor_refresh: Instant::now(),
+            last_check: Instant::now() - FAILSAFE_CHECK_INTERVAL,
+        }
+    }
+
+    fn refresh_monitors_if_needed(&mut self) {
+        if self.last_monitor_refresh.elapsed() < MONITOR_REFRESH_INTERVAL {
+            return;
+        }
+
+        if let Some(monitors) = current_monitor_rects() {
+            self.monitors = monitors;
+        }
+        self.last_monitor_refresh = Instant::now();
+    }
+
+    pub fn should_stop(&mut self, config: &ClickerConfig) -> Option<String> {
+        if !self.enabled {
+            return None;
+        }
+        if self.last_check.elapsed() < FAILSAFE_CHECK_INTERVAL {
+            return None;
+        }
+        self.last_check = Instant::now();
+
+        let cursor = current_cursor_position()?;
+        self.refresh_monitors_if_needed();
+        detect_failsafe(cursor, &self.monitors, config)
+    }
+}
 
 fn detect_custom_stop_zone(cursor: (i32, i32), config: &ClickerConfig) -> Option<String> {
     if config.custom_stop_zone_enabled && config.custom_stop_zone.contains(cursor.0, cursor.1) {
@@ -97,12 +151,6 @@ pub fn detect_failsafe(
     None
 }
 
-pub fn should_stop_for_failsafe(config: &ClickerConfig) -> Option<String> {
-    let cursor = current_cursor_position()?;
-    let monitors = current_monitor_rects()?;
-    detect_failsafe(cursor, &monitors, config)
-}
-
 #[cfg(test)]
 mod tests {
     use super::super::PathMode;
@@ -112,6 +160,7 @@ mod tests {
         ClickerConfig {
             base_interval_secs: 0.04,
             variation: 0.0,
+            smart_performance_enabled: true,
             limit: 0,
             duty: 45.0,
             time_limit: 0.0,

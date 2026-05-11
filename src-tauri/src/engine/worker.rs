@@ -11,7 +11,7 @@ use crate::ClickerState;
 use crate::ClickerStatusPayload;
 use crate::STATUS_EVENT;
 
-use super::failsafe::should_stop_for_failsafe;
+use super::failsafe::FailsafeChecker;
 use super::mouse::{
     get_button_flags, get_cursor_pos, move_mouse, send_batch, send_physical_clicks, smooth_move,
     VirtualScreenRect,
@@ -352,6 +352,7 @@ pub fn build_config(settings: &ClickerSettings) -> Result<ClickerConfig, String>
         } else {
             0.0
         },
+        smart_performance_enabled: settings.smart_performance_enabled,
         limit: merge_click_limit(settings),
         duty: if settings.duty_cycle_enabled {
             settings.duty_cycle
@@ -567,6 +568,33 @@ fn jitter_xy(x: i32, y: i32, px: i32, rng: &mut SmallRng) -> (i32, i32) {
     (x + jx, y + jy)
 }
 
+fn simple_fast_batch_size(config: &ClickerConfig, cps: f64, mod_keys: bool) -> usize {
+    let estimated_hold_ms =
+        (config.base_interval_secs * (config.duty.max(0.0) / 100.0) * 1000.0) as u32;
+    if config.clicks_per_gesture != 1
+        || config.double_click_enabled
+        || config.alternate_buttons
+        || mod_keys
+        || config.burst_mode_enabled
+        || config.fixed_hold_enabled
+        || estimated_hold_ms > 0
+        || config.path_mode != PathMode::None
+        || config.screen_trigger.enabled
+        || config.cursor_jitter_px > 0
+        || cps < 50.0
+    {
+        return 1;
+    }
+
+    if !config.smart_performance_enabled {
+        return 2;
+    }
+
+    // Keep the simple high-speed path responsive while amortizing SendInput,
+    // status, timing, and failsafe overhead across a small burst.
+    (cps * 0.016).ceil().clamp(2.0, 96.0) as usize
+}
+
 pub fn start_clicker(config: ClickerConfig, control: RunControl) -> RunOutcome {
     CLICK_COUNT.store(0, Ordering::SeqCst);
 
@@ -586,19 +614,7 @@ pub fn start_clicker(config: ClickerConfig, control: RunControl) -> RunOutcome {
     };
 
     let mod_keys = config.click_with_ctrl || config.click_with_shift || config.click_with_alt;
-    let batch_size = if config.clicks_per_gesture == 1
-        && !config.double_click_enabled
-        && !config.alternate_buttons
-        && !mod_keys
-        && !config.burst_mode_enabled
-        && !config.fixed_hold_enabled
-        && config.path_mode == PathMode::None
-        && cps >= 50.0
-    {
-        2usize
-    } else {
-        1usize
-    };
+    let batch_size = simple_fast_batch_size(&config, cps, mod_keys);
 
     let has_position = config.use_sequence()
         || config.path_mode == PathMode::Grid
@@ -610,6 +626,8 @@ pub fn start_clicker(config: ClickerConfig, control: RunControl) -> RunOutcome {
     let mut line_step: u32 = 0;
     let mut burst_counter: u32 = 0;
     let mut visual_state = crate::engine::screen_trigger::VisualTriggerState::default();
+    let mut failsafe_checker = FailsafeChecker::new(&config);
+    let mut fast_batch_inputs = Vec::with_capacity(batch_size.saturating_mul(2));
 
     let mut sequence_index = 0usize;
     let mut cycle_target = current_cycle_target(&config, sequence_index);
@@ -636,16 +654,14 @@ pub fn start_clicker(config: ClickerConfig, control: RunControl) -> RunOutcome {
             config.line_end_dy,
         )
     } else {
-        get_cursor_pos()
+        (anchor_x, anchor_y)
     };
 
     (target_x, target_y) = jitter_xy(target_x, target_y, config.cursor_jitter_px, &mut rng);
 
     let mut stop_reason = String::from("Stopped");
     let mut last_status_emit = Instant::now();
-    let status_emit_interval = Duration::from_millis(100);
-
-    println!("Clicking at: {}, {}", target_x, target_y);
+    let status_emit_interval = Duration::from_millis(250);
 
     if has_position {
         move_mouse(target_x, target_y);
@@ -671,7 +687,7 @@ pub fn start_clicker(config: ClickerConfig, control: RunControl) -> RunOutcome {
             break;
         }
 
-        if let Some(reason) = should_stop_for_failsafe(&config) {
+        if let Some(reason) = failsafe_checker.should_stop(&config) {
             stop_reason = reason;
             break;
         }
@@ -691,37 +707,35 @@ pub fn start_clicker(config: ClickerConfig, control: RunControl) -> RunOutcome {
         let cycle_duration_base =
             config.base_interval_secs * scale * batch_size.max(1) as f64;
 
-        cycle_target = current_cycle_target(&config, sequence_index);
-
-        let (base_x, base_y) = if config.use_sequence() {
-            (cycle_target.x, cycle_target.y)
-        } else if config.path_mode == PathMode::Grid {
-            grid_xy(
-                anchor_x,
-                anchor_y,
-                grid_index,
-                config.grid_cols,
-                config.grid_rows,
-                config.grid_spacing_px,
-            )
-        } else if config.path_mode == PathMode::Line {
-            line_xy(
-                anchor_x,
-                anchor_y,
-                line_step,
-                config.line_steps,
-                config.line_end_dx,
-                config.line_end_dy,
-            )
-        } else {
-            get_cursor_pos()
-        };
-
-        let (jx, jy) = jitter_xy(base_x, base_y, config.cursor_jitter_px, &mut rng);
-        target_x = jx;
-        target_y = jy;
-
         if has_position {
+            cycle_target = current_cycle_target(&config, sequence_index);
+
+            let (base_x, base_y) = if config.use_sequence() {
+                (cycle_target.x, cycle_target.y)
+            } else if config.path_mode == PathMode::Grid {
+                grid_xy(
+                    anchor_x,
+                    anchor_y,
+                    grid_index,
+                    config.grid_cols,
+                    config.grid_rows,
+                    config.grid_spacing_px,
+                )
+            } else {
+                line_xy(
+                    anchor_x,
+                    anchor_y,
+                    line_step,
+                    config.line_steps,
+                    config.line_end_dx,
+                    config.line_end_dy,
+                )
+            };
+
+            let (jx, jy) = jitter_xy(base_x, base_y, config.cursor_jitter_px, &mut rng);
+            target_x = jx;
+            target_y = jy;
+
             if config.use_sequence() {
                 if config.offset_chance > 0.0 && rng.next_f64() * 100.0 <= config.offset_chance {
                     let angle = rng.next_f64() * 2.0 * PI;
@@ -789,7 +803,7 @@ pub fn start_clicker(config: ClickerConfig, control: RunControl) -> RunOutcome {
         let use_gap = cpg > 1 || config.double_click_enabled;
         let gap_ms = config.double_click_delay_ms;
 
-        let fast_batch = batch_size == 2
+        let fast_batch = batch_size > 1
             && cpg == 1
             && !config.alternate_buttons
             && !mod_keys
@@ -799,7 +813,7 @@ pub fn start_clicker(config: ClickerConfig, control: RunControl) -> RunOutcome {
 
         if fast_batch {
             let (df, uf) = get_button_flags(config.button);
-            send_batch(df, uf, clicks_this_cycle, hold_ms);
+            send_batch(df, uf, clicks_this_cycle, &mut fast_batch_inputs);
         } else {
             let mut sent_total = 0usize;
             while sent_total < clicks_this_cycle {
@@ -857,7 +871,12 @@ pub fn start_clicker(config: ClickerConfig, control: RunControl) -> RunOutcome {
             last_status_emit = Instant::now();
         }
 
-        control.sleep_for_session(Duration::from_secs_f64(batch_duration.max(0.001)));
+        let sleep_duration = Duration::from_secs_f64(batch_duration.max(0.0));
+        if sleep_duration >= Duration::from_millis(1) {
+            control.sleep_for_session(sleep_duration);
+        } else {
+            std::thread::yield_now();
+        }
 
         if config.path_mode == PathMode::Grid {
             grid_index = grid_index.wrapping_add(1);
@@ -932,6 +951,7 @@ mod tests {
         ClickerConfig {
             base_interval_secs: 0.04,
             variation: 0.0,
+            smart_performance_enabled: true,
             limit: 0,
             duty: 45.0,
             time_limit: 0.0,

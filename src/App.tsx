@@ -51,7 +51,7 @@ function getPanelSize(tab: Tab, hasUpdate: boolean) {
   if (tab === "simple") {
     return { width: 650, height: 175 + extra };
   }
-  if (tab === "settings") return { width: 560, height: 620 + extra };
+  if (tab === "settings") return { width: 860, height: 720 + extra };
   if (tab === "zones") return { width: 550, height: 400 + extra };
   return { width: 860, height: 720 + extra };
 }
@@ -124,6 +124,10 @@ function wait(ms: number) {
   return new Promise((resolve) => window.setTimeout(resolve, ms));
 }
 
+function easeOutQuint(t: number) {
+  return 1 - Math.pow(1 - t, 5);
+}
+
 export default function App() {
   const [tab, setTab] = useState<Tab>("simple");
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
@@ -135,7 +139,7 @@ export default function App() {
   } | null>(null);
   const [dropdownOverflowBottom, setDropdownOverflowBottom] = useState(0);
   const [sessionStartedAt, setSessionStartedAt] = useState<number | null>(null);
-  const [, setSessionClockTick] = useState(0);
+  const [sessionNow, setSessionNow] = useState(() => Date.now());
 
   const hotkeyTimer = useRef<number | null>(null);
   const hotkeyRequestIdRef = useRef(0);
@@ -147,7 +151,7 @@ export default function App() {
   const lastValidPauseHotkeyRef = useRef(DEFAULT_SETTINGS.pauseHotkey);
   const launchWindowPlacementDone = useRef(false);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const resizeTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const resizeAnimationRef = useRef(0);
 
   const setUiSettings = (nextSettings: Settings) => {
     uiSettingsRef.current = nextSettings;
@@ -337,6 +341,63 @@ export default function App() {
 
   const applyStartupWindowPlacement = async () => {
     await getCurrentWindow().center();
+  };
+
+  const animateWindowSize = async (
+    width: number,
+    height: number,
+    fromWidth?: number,
+    fromHeight?: number,
+  ) => {
+    const appWindow = getCurrentWindow();
+    const animationId = resizeAnimationRef.current + 1;
+    resizeAnimationRef.current = animationId;
+
+    const currentSize = await appWindow.innerSize();
+    const monitorScale = await appWindow.scaleFactor();
+    const startWidth = fromWidth ?? currentSize.width / monitorScale;
+    const startHeight = fromHeight ?? currentSize.height / monitorScale;
+
+    if (
+      Math.abs(startWidth - width) < 1 &&
+      Math.abs(startHeight - height) < 1
+    ) {
+      return;
+    }
+
+    const duration = 170;
+    const startedAt = performance.now();
+    let lastWidth = Math.round(startWidth);
+    let lastHeight = Math.round(startHeight);
+
+    await new Promise<void>((resolve) => {
+      const step = () => {
+        if (resizeAnimationRef.current !== animationId) {
+          resolve();
+          return;
+        }
+
+        const progress = Math.min(1, (performance.now() - startedAt) / duration);
+        const eased = easeOutQuint(progress);
+        const nextWidth = Math.round(startWidth + (width - startWidth) * eased);
+        const nextHeight = Math.round(startHeight + (height - startHeight) * eased);
+
+        if (nextWidth !== lastWidth || nextHeight !== lastHeight) {
+          lastWidth = nextWidth;
+          lastHeight = nextHeight;
+          void appWindow.setSize(new LogicalSize(nextWidth, nextHeight));
+        }
+
+        if (progress >= 1) {
+          resolve();
+          return;
+        }
+
+        window.requestAnimationFrame(step);
+      };
+
+      window.requestAnimationFrame(step);
+    });
   };
 
   const handleWindowClose = async () => {
@@ -593,6 +654,11 @@ export default function App() {
           ...loadedStatus,
           paused: loadedStatus.paused ?? false,
         });
+        if (loadedStatus.running) {
+          const now = Date.now();
+          setSessionNow(now);
+          setSessionStartedAt(now);
+        }
         setSettingsLoaded(true);
 
         await syncSettingsToBackend(hydratedSettings);
@@ -622,32 +688,15 @@ export default function App() {
       if (saveTimerRef.current) {
         clearTimeout(saveTimerRef.current);
       }
-      if (resizeTimeout.current) {
-        clearTimeout(resizeTimeout.current);
-      }
+      resizeAnimationRef.current += 1;
     };
   }, []);
-
-  useEffect(() => {
-    setSessionStartedAt((prev) => {
-      if (!status.running) {
-        return null;
-      }
-      if (prev !== null) {
-        return prev;
-      }
-      return Date.now();
-    });
-  }, [status.running]);
 
   useEffect(() => {
     if (!status.running || sessionStartedAt === null) {
       return;
     }
-    const id = window.setInterval(
-      () => setSessionClockTick((n) => n + 1),
-      200,
-    );
+    const id = window.setInterval(() => setSessionNow(Date.now()), 200);
     return () => clearInterval(id);
   }, [status.running, sessionStartedAt]);
 
@@ -655,7 +704,15 @@ export default function App() {
     let cleanup: (() => void) | undefined;
 
     listen<ClickerStatus>("clicker-status", (event) => {
-      setStatus(event.payload);
+      const nextStatus = event.payload;
+      setStatus(nextStatus);
+      if (nextStatus.running) {
+        const now = Date.now();
+        setSessionNow(now);
+        setSessionStartedAt((prev) => prev ?? now);
+      } else {
+        setSessionStartedAt(null);
+      }
     })
       .then((unlisten) => {
         cleanup = unlisten;
@@ -691,11 +748,6 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (resizeTimeout.current) {
-      clearTimeout(resizeTimeout.current);
-      resizeTimeout.current = null;
-    }
-
     const root = document.querySelector(".app-root") as HTMLElement;
 
     void (async () => {
@@ -729,36 +781,17 @@ export default function App() {
         const currentH = currentSize.height / monitorScale;
         const currentW = currentSize.width / monitorScale;
 
-        if (width < currentW || windowHeight < currentH) {
-          const snapW = width >= currentW ? width : currentW;
-          const snapH = windowHeight >= currentH ? windowHeight : currentH;
-
-          if (snapW !== currentW || snapH !== currentH) {
-            await appWindow.setSize(new LogicalSize(snapW, snapH));
-          }
-
-          root.style.width = `${width}px`;
-          root.style.height = `${height}px`;
-
-          resizeTimeout.current = setTimeout(async () => {
-            await appWindow.setSize(new LogicalSize(width, windowHeight));
-            resizeTimeout.current = null;
-          }, 320);
-        } else {
-          await appWindow.setSize(new LogicalSize(width, windowHeight));
-          root.style.width = `${currentW}px`;
-          root.style.height = `${currentH}px`;
-
-          void root.offsetHeight;
-
-          root.style.width = `${width}px`;
-          root.style.height = `${height}px`;
-        }
+        root.style.width = `${currentW}px`;
+        root.style.height = `${currentH}px`;
+        void root.offsetHeight;
+        root.style.width = `${width}px`;
+        root.style.height = `${height}px`;
+        await animateWindowSize(width, windowHeight, currentW, currentH);
       } catch (err) {
         console.error("Failed to size window:", err);
       }
     })();
-  }, [settings, settingsLoaded, tab, updateInfo, dropdownOverflowBottom]);
+  }, [settingsLoaded, tab, updateInfo, dropdownOverflowBottom]);
 
   useEffect(() => {
     const checkForUpdates = () => {
@@ -834,7 +867,7 @@ export default function App() {
 
   const sessionElapsedSecs =
     status.running && sessionStartedAt !== null
-      ? (Date.now() - sessionStartedAt) / 1000
+      ? (sessionNow - sessionStartedAt) / 1000
       : 0;
 
   return (
@@ -865,7 +898,7 @@ export default function App() {
             latestVersion={updateInfo.latestVersion}
           />
         )}
-        <main className="panel-area">
+        <main key={tab} className="panel-area">
           {tab === "simple" && (
             <SimplePanel settings={settings} update={updateSettings} />
           )}

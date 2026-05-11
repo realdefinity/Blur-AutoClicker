@@ -78,6 +78,49 @@ function formatCpu(
   })}%`;
 }
 
+function effectiveCps(settings: Settings) {
+  if (settings.rateInputMode === "duration") {
+    const totalMs =
+      settings.durationHours * 3_600_000 +
+      settings.durationMinutes * 60_000 +
+      settings.durationSeconds * 1_000 +
+      settings.durationMilliseconds;
+    return 1000 / Math.max(1, totalMs);
+  }
+
+  if (settings.clickInterval === "m") return settings.clickSpeed / 60;
+  if (settings.clickInterval === "h") return settings.clickSpeed / 3600;
+  if (settings.clickInterval === "d") return settings.clickSpeed / 86400;
+  return settings.clickSpeed;
+}
+
+function smartBatchSize(settings: Settings) {
+  const cps = effectiveCps(settings);
+  const duty = settings.dutyCycleEnabled ? settings.dutyCycle : 0.01;
+  const holdMs = Math.trunc(
+    (1000 / Math.max(cps, 0.001)) * (Math.max(0, duty) / 100),
+  );
+  const preciseMode =
+    settings.clicksPerGesture !== 1 ||
+    settings.doubleClickEnabled ||
+    settings.alternateButtonsEnabled ||
+    settings.burstModeEnabled ||
+    settings.fixedHoldEnabled ||
+    settings.clickWithCtrl ||
+    settings.clickWithShift ||
+    settings.clickWithAlt ||
+    settings.sequenceEnabled ||
+    settings.gridClickEnabled ||
+    settings.linePathEnabled ||
+    settings.screenTriggerEnabled ||
+    settings.cursorJitterPx > 0 ||
+    holdMs > 0 ||
+    cps < 50;
+
+  if (preciseMode) return 1;
+  return settings.smartPerformanceEnabled ? Math.ceil(cps * 0.01) : 2;
+}
+
 function SettingsSectionHeading({
   title,
   description,
@@ -386,6 +429,58 @@ export default function SettingsPanel({
     { value: true, label: t("common.on") },
     { value: false, label: t("common.off") },
   ];
+  const smartCps = effectiveCps(settings);
+  const smartBatch = Math.max(1, Math.min(64, smartBatchSize(settings)));
+  const smartActive = settings.smartPerformanceEnabled && smartBatch > 1;
+  const smartStatus = !settings.smartPerformanceEnabled
+    ? t("settings.smartPerformanceOff")
+    : smartActive
+      ? t("settings.smartPerformanceTurbo", {
+          batch: smartBatch,
+          cps: Math.round(smartCps),
+        })
+      : t("settings.smartPerformanceCompatible");
+
+  const renderOnOff = (
+    value: boolean | null,
+    onChange: (nextValue: boolean) => void,
+    disabled = false,
+  ) => (
+    <div className="settings-seg-group settings-toggle-group">
+      {onOffOptions.map((option) => (
+        <button
+          key={String(option.value)}
+          className={`settings-seg-btn ${value === option.value ? "active" : ""}`}
+          data-toggle-option={option.value ? "on" : "off"}
+          data-toggle-label={option.label}
+          disabled={disabled}
+          onClick={() => onChange(option.value)}
+        >
+          {option.label}
+        </button>
+      ))}
+    </div>
+  );
+
+  const prepareSmartPerformance = () => {
+    update({
+      smartPerformanceEnabled: true,
+      dutyCycleEnabled: false,
+      speedVariationEnabled: false,
+      doubleClickEnabled: false,
+      burstModeEnabled: false,
+      fixedHoldEnabled: false,
+      clicksPerGesture: 1,
+      alternateButtonsEnabled: false,
+      cursorJitterPx: 0,
+      clickWithCtrl: false,
+      clickWithShift: false,
+      clickWithAlt: false,
+      gridClickEnabled: false,
+      linePathEnabled: false,
+      screenTriggerEnabled: false,
+    });
+  };
 
   const handleConfirmResetSettings = async () => {
     setResetting(true);
@@ -598,6 +693,43 @@ export default function SettingsPanel({
         </SettingsCard>
 
         <SettingsCard
+          title={t("settings.sectionPerformance")}
+          description={t("settings.sectionPerformanceDescription")}
+        >
+          <div className="settings-row">
+            <div className="settings-label-group">
+              <span className="settings-label">
+                {t("settings.smartPerformance")}
+              </span>
+              <span className="settings-sublabel">
+                {t("settings.smartPerformanceDescription")}
+              </span>
+            </div>
+            {renderOnOff(settings.smartPerformanceEnabled, (value) =>
+              update({ smartPerformanceEnabled: value }),
+            )}
+          </div>
+          <div className="settings-smart-card">
+            <div className="settings-smart-meter" data-active={smartActive}>
+              <span className="settings-smart-value">{smartBatch}x</span>
+              <span className="settings-smart-label">
+                {t("settings.smartPerformanceBatch")}
+              </span>
+            </div>
+            <div className="settings-smart-copy">
+              <span className="settings-smart-status">{smartStatus}</span>
+              <button
+                type="button"
+                className="settings-btn-secondary settings-smart-action"
+                onClick={prepareSmartPerformance}
+              >
+                {t("settings.smartPerformancePrepare")}
+              </button>
+            </div>
+          </div>
+        </SettingsCard>
+
+        <SettingsCard
           title={t("settings.sectionBehavior")}
           description={t("settings.sectionBehaviorDescription")}
         >
@@ -610,17 +742,7 @@ export default function SettingsPanel({
                 {t("settings.alwaysOnTopDescription")}
               </span>
             </div>
-            <div className="settings-seg-group">
-              {onOffOptions.map((option) => (
-                <button
-                  key={String(option.value)}
-                  className={`settings-seg-btn ${settings.alwaysOnTop === option.value ? "active" : ""}`}
-                  onClick={() => handleAlwaysOnTopChange(option.value)}
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
+            {renderOnOff(settings.alwaysOnTop, handleAlwaysOnTopChange)}
           </div>
 
           <div className="settings-row">
@@ -632,17 +754,9 @@ export default function SettingsPanel({
                 {t("settings.stopHitboxOverlayDescription")}
               </span>
             </div>
-            <div className="settings-seg-group">
-              {onOffOptions.map((option) => (
-                <button
-                  key={String(option.value)}
-                  className={`settings-seg-btn ${settings.showStopOverlay === option.value ? "active" : ""}`}
-                  onClick={() => update({ showStopOverlay: option.value })}
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
+            {renderOnOff(settings.showStopOverlay, (value) =>
+              update({ showStopOverlay: value }),
+            )}
           </div>
 
           <div className="settings-row">
@@ -654,17 +768,9 @@ export default function SettingsPanel({
                 {t("settings.stopReasonAlertDescription")}
               </span>
             </div>
-            <div className="settings-seg-group">
-              {onOffOptions.map((option) => (
-                <button
-                  key={String(option.value)}
-                  className={`settings-seg-btn ${settings.showStopReason === option.value ? "active" : ""}`}
-                  onClick={() => update({ showStopReason: option.value })}
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
+            {renderOnOff(settings.showStopReason, (value) =>
+              update({ showStopReason: value }),
+            )}
           </div>
 
           <div className="settings-row">
@@ -676,19 +782,9 @@ export default function SettingsPanel({
                 {t("settings.sessionClickCountInTitleDescription")}
               </span>
             </div>
-            <div className="settings-seg-group">
-              {onOffOptions.map((option) => (
-                <button
-                  key={String(option.value)}
-                  className={`settings-seg-btn ${settings.showSessionClickCountInTitle === option.value ? "active" : ""}`}
-                  onClick={() =>
-                    update({ showSessionClickCountInTitle: option.value })
-                  }
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
+            {renderOnOff(settings.showSessionClickCountInTitle, (value) =>
+              update({ showSessionClickCountInTitle: value }),
+            )}
           </div>
 
           <div className="settings-row">
@@ -700,19 +796,9 @@ export default function SettingsPanel({
                 {t("settings.sessionElapsedInTitleDescription")}
               </span>
             </div>
-            <div className="settings-seg-group">
-              {onOffOptions.map((option) => (
-                <button
-                  key={String(option.value)}
-                  className={`settings-seg-btn ${settings.showSessionElapsedInTitle === option.value ? "active" : ""}`}
-                  onClick={() =>
-                    update({ showSessionElapsedInTitle: option.value })
-                  }
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
+            {renderOnOff(settings.showSessionElapsedInTitle, (value) =>
+              update({ showSessionElapsedInTitle: value }),
+            )}
           </div>
 
           <div className="settings-row">
@@ -724,19 +810,9 @@ export default function SettingsPanel({
                 {t("settings.strictHotkeyModifiersDescription")}
               </span>
             </div>
-            <div className="settings-seg-group">
-              {onOffOptions.map((option) => (
-                <button
-                  key={String(option.value)}
-                  className={`settings-seg-btn ${settings.strictHotkeyModifiers === option.value ? "active" : ""}`}
-                  onClick={() =>
-                    update({ strictHotkeyModifiers: option.value })
-                  }
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
+            {renderOnOff(settings.strictHotkeyModifiers, (value) =>
+              update({ strictHotkeyModifiers: value }),
+            )}
           </div>
         </SettingsCard>
 
@@ -753,17 +829,9 @@ export default function SettingsPanel({
                 {t("settings.minimizeToTrayDescription")}
               </span>
             </div>
-            <div className="settings-seg-group">
-              {onOffOptions.map((option) => (
-                <button
-                  key={String(option.value)}
-                  className={`settings-seg-btn ${settings.minimizeToTray === option.value ? "active" : ""}`}
-                  onClick={() => update({ minimizeToTray: option.value })}
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
+            {renderOnOff(settings.minimizeToTray, (value) =>
+              update({ minimizeToTray: value }),
+            )}
           </div>
 
           <div className="settings-row">
@@ -775,22 +843,15 @@ export default function SettingsPanel({
                 {t("settings.runOnStartupDescription")}
               </span>
             </div>
-            <div className="settings-seg-group">
-              {onOffOptions.map((option) => (
-                <button
-                  key={String(option.value)}
-                  className={`settings-seg-btn ${autostartEnabled === option.value ? "active" : ""}`}
-                  disabled={autostartEnabled === null}
-                  onClick={() => {
-                    invoke("set_autostart_enabled", { enabled: option.value })
-                      .then(() => setAutostartEnabled(option.value))
-                      .catch(console.error);
-                  }}
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
+            {renderOnOff(
+              autostartEnabled,
+              (value) => {
+                invoke("set_autostart_enabled", { enabled: value })
+                  .then(() => setAutostartEnabled(value))
+                  .catch(console.error);
+              },
+              autostartEnabled === null,
+            )}
           </div>
         </SettingsCard>
 

@@ -77,16 +77,19 @@
   border-radius: 0.375rem;
   color: var(--text-dim);
   line-height: 0;
-  transition: all 0.5s ease;
+  transition:
+    color var(--motion-fast) var(--motion-ease),
+    background var(--motion-fast) var(--motion-ease),
+    transform var(--motion-fast) var(--motion-spring);
 }
 
 .settings-button:hover {
-  transition-duration: 0.2s;
   color: var(--text-primary);
   background: var(--bg-elevated);
+  transform: translateY(-1px);
 }
 .settings-svg {
-  transition: transform 0.5s ease-in-out;
+  transition: transform var(--motion-slow) var(--motion-spring);
   transform: rotate(0deg);
 }
 .settings-button:hover .settings-svg{
@@ -102,9 +105,56 @@
 .tab-icon-group {
   display: flex;
   gap: 0.25rem;
+  position: relative;
+  isolation: isolate;
+  padding: 0.125rem;
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--bg-elevated) 62%, transparent);
+}
+
+.tab-icon-group::before {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  top: 0.125rem;
+  left: 0.125rem;
+  width: 2rem;
+  height: 2rem;
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--active-tab-color) 16%, var(--bg-input));
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--active-tab-color) 46%, transparent),
+    0 0 16px var(--accent-green-glow-2);
+  opacity: 0;
+  transform: scale(0.9);
+  transition:
+    left var(--motion-med) var(--motion-spring),
+    opacity var(--motion-fast) var(--motion-ease),
+    transform var(--motion-med) var(--motion-spring);
+}
+
+.tab-icon-group[data-active-index="0"]::before,
+.tab-icon-group[data-active-index="1"]::before,
+.tab-icon-group[data-active-index="2"]::before {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.tab-icon-group[data-active-index="0"]::before {
+  left: 0.125rem;
+}
+
+.tab-icon-group[data-active-index="1"]::before {
+  left: calc(0.125rem + 2.25rem);
+}
+
+.tab-icon-group[data-active-index="2"]::before {
+  left: calc(0.125rem + 4.5rem);
 }
 
 .tab-icon-btn {
+  position: relative;
+  z-index: 1;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -118,21 +168,19 @@
   line-height: 0;
   cursor: pointer;
   transition:
-    color 0.2s ease,
-    background 0.2s ease,
-    box-shadow 0.2s ease;
+    color var(--motion-fast) var(--motion-ease),
+    background var(--motion-fast) var(--motion-ease),
+    transform var(--motion-fast) var(--motion-spring);
   -webkit-app-region: no-drag;
 }
 
 .tab-icon-btn:hover {
   color: var(--text-primary);
-  background: var(--bg-elevated);
+  transform: translateY(-1px);
 }
 
 .tab-icon-btn.active {
-  background: color-mix(in oklab, var(--active-color) 14%, transparent);
   color: var(--active-color);
-  /* box-shadow: 0 0 0 1px color-mix(in oklab, var(--active-color) 55%, transparent); */
 }
 
 .tab-icon-btn:focus-visible {
@@ -160,18 +208,23 @@
   
   /* Visuals */
   color: var(--text-dim);
-  transition: all 0.15s ease;
+  transition:
+    color var(--motion-fast) var(--motion-ease),
+    background var(--motion-fast) var(--motion-ease),
+    transform var(--motion-fast) var(--motion-spring);
   -webkit-app-region: no-drag;
 }
 
 .window-btn:not(.window-btn-danger):hover {
   background: var(--bg-elevated);
   color: var(--text-primary);
+  transform: translateY(-1px);
 }
 
 .window-btn-danger:hover {
   background: rgba(248, 113, 113, 0.15);
   color: var(--accent-red);
+  transform: translateY(-1px);
 }
 
 .window-btn.active {
@@ -192,7 +245,9 @@
 .title-flipper {
   display: inline-block;
   transform-origin: center bottom;
-  transition: transform 0.2s ease-in, opacity 0.2s ease-in;
+  transition:
+    transform var(--motion-med) var(--motion-spring),
+    opacity var(--motion-fast) var(--motion-ease);
 }
 
 .title-flipper.flip-out {
@@ -201,7 +256,7 @@
 }
 
 .title-flipper.flip-in {
-  animation: titleFlipIn 0.2s ease-out forwards;
+  animation: titleFlipIn var(--motion-med) var(--motion-spring) forwards;
 }
 
 @keyframes titleFlipIn {
